@@ -528,9 +528,9 @@ const Dashboard = {
         
         let maxUnits = 0;
         let avgUnits = 0;
-        if (filteredData.length > 0) {
+        if (kpis.totalRecords > 0) {
             maxUnits = Math.max(...filteredData.map(r => r.units || 0));
-            avgUnits = kpis.totalUnits / filteredData.length;
+            avgUnits = kpis.totalUnits / kpis.totalRecords;
         }
 
         this.animateValue(this.kpiHtTotalRecords, 0, kpis.totalRecords, 800, val => val.toLocaleString('en-IN'));

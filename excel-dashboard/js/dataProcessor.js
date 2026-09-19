@@ -242,14 +242,26 @@ const DataProcessor = {
         
         let totalValue = 0;
         let totalUnits = 0;
+        let maxValue = 0;
+        let maxUnits = 0;
+        
+        const uniqueRows = new Set();
         
         data.forEach(row => {
             totalValue += row.value || 0;
             totalUnits += row.units || 0;
+            if ((row.value || 0) > maxValue) maxValue = row.value;
+            if ((row.units || 0) > maxUnits) maxUnits = row.units;
+            
+            if (row.originalRow) {
+                uniqueRows.add(row.originalRow);
+            }
         });
         
+        const count = uniqueRows.size > 0 ? uniqueRows.size : data.length;
+        
         return {
-            totalRecords: data.length,
+            totalRecords: count,
             totalValue: totalValue,
             avgValue: totalValue / data.length,
             totalUnits: totalUnits
