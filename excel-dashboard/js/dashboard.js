@@ -303,3 +303,13 @@ const Dashboard = {
 };
 
 window.Dashboard = Dashboard;
+
+// Initialize the dashboard when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    Dashboard.init();
+    
+    // Check if ChartManager needs initialization
+    if (window.ChartManager && typeof ChartManager.init === 'function') {
+        ChartManager.init();
+    }
+});

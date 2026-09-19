@@ -22,13 +22,15 @@ const ExcelReader = {
                     // Read all worksheets
                     let allData = [];
 
+                    const hasOtherTabs = workbook.SheetNames.some(s => !s.toLowerCase().startsWith('sheet'));
+
                     workbook.SheetNames.forEach(sheetName => {
-                        // Skip default/empty sheets like 'Sheet1'
-                        if (sheetName.toLowerCase().startsWith('sheet')) return;
+                        // Skip default/empty sheets like 'Sheet1' ONLY if there are other data tabs
+                        if (hasOtherTabs && sheetName.toLowerCase().startsWith('sheet')) return;
                         
                         const worksheet = workbook.Sheets[sheetName];
                         
-                        // First pass: find the header row by looking for something matching 'Month' and 'Year'
+                        // First pass: find the header row by looking for something matching 'Month'
                         const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                         let sheetHeaderRowIndex = 0;
                         for (let i = 0; i < Math.min(10, rawRows.length); i++) {
@@ -36,7 +38,7 @@ const ExcelReader = {
                             if (row.some(cell => {
                                 if (typeof cell !== 'string') return false;
                                 const normalized = cell.toLowerCase().replace(/[\s\n\r]/g, '');
-                                return normalized.includes('month/year') || normalized.includes('month\\year');
+                                return normalized.includes('month');
                             })) {
                                 sheetHeaderRowIndex = i;
                                 break;
