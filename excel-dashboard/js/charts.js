@@ -57,8 +57,12 @@ const ChartManager = {
         }
     },
     
-    createMonthlyTrendChart: function(trendData) {
-        const ctx = document.getElementById('chart-monthly-trend').getContext('2d');
+    createMonthlyTrendChart: function(trendData, canvasId = 'chart-monthly-trend', chartKey = 'monthlyTrend', datasetLabel = 'Total Value (Rs.)') {
+        if (AppState.charts[chartKey]) {
+            AppState.charts[chartKey].destroy();
+        }
+        
+        const ctx = document.getElementById(canvasId).getContext('2d');
         const labels = Object.keys(trendData).sort();
         const data = labels.map(l => trendData[l]);
         
@@ -69,12 +73,12 @@ const ChartManager = {
         gradient.addColorStop(0, 'rgba(79, 70, 229, 0.95)'); // Deep Indigo
         gradient.addColorStop(1, 'rgba(79, 70, 229, 0.1)'); // Soft Indigo
         
-        AppState.charts.monthlyTrend = new Chart(ctx, {
+        AppState.charts[chartKey] = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: formattedLabels,
                 datasets: [{
-                    label: 'Total Value (Rs.)',
+                    label: datasetLabel,
                     data: data,
                     backgroundColor: gradient,
                     hoverBackgroundColor: this.colors.primary,
@@ -139,10 +143,14 @@ const ChartManager = {
         });
     },
     
-    createCategoryDistChart: function(distData) {
-        const ctx = document.getElementById('chart-category-dist').getContext('2d');
+    createCategoryDistChart: function(distData, canvasId = 'chart-category-dist', chartKey = 'categoryDist', datasetLabel = 'Total Value (Rs.)') {
+        if (AppState.charts[chartKey]) {
+            AppState.charts[chartKey].destroy();
+        }
+        
+        const ctx = document.getElementById(canvasId).getContext('2d');
         const labels = Object.keys(distData);
-        const data = Object.values(distData);
+        const data = labels.map(l => distData[l]);
         
         const palette = [
             this.colors.primary,
@@ -152,7 +160,7 @@ const ChartManager = {
             this.colors.tertiary
         ];
         
-        AppState.charts.categoryDist = new Chart(ctx, {
+        AppState.charts[chartKey] = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: labels,

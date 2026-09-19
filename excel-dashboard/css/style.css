@@ -292,6 +292,50 @@ body {
     animation: spin 1s linear infinite;
 }
 
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+}
+
+.tab-navigation.hidden {
+    display: none;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    position: relative;
+}
+
+.tab-btn:hover {
+    color: var(--text-main);
+    background: #f1f5f9;
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
 /* Filter Section */
 .filter-section {
     background: var(--surface);
