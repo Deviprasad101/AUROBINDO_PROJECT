@@ -9,16 +9,18 @@ const Dashboard = {
     },
     
     cacheDOM: function() {
-        // File 1
         this.file1Input = document.getElementById('file1-input');
         this.file1Name = document.getElementById('file1-name');
+        this.fileNameText = document.getElementById('file-name-text');
         this.file1Status = document.getElementById('file1-status');
+        this.dropZone = document.getElementById('drop-zone');
         
         // Filters
         this.unitSelect = document.getElementById('unit-select');
         this.monthSelect = document.getElementById('month-select');
         this.yearSelect = document.getElementById('year-select');
         this.applyFilterBtn = document.getElementById('apply-filter-btn');
+        this.applyFilterText = document.getElementById('apply-filter-text');
         this.resetFilterBtn = document.getElementById('reset-filter-btn');
         this.exportBtn = document.getElementById('export-btn');
         
@@ -38,7 +40,30 @@ const Dashboard = {
     },
     
     bindEvents: function() {
-        this.file1Input.addEventListener('change', (e) => this.onFileUpload(e, 1));
+        this.file1Input.addEventListener('change', (e) => {
+            if (e.target.files.length) this.onFileUpload(e.target.files[0]);
+        });
+        
+        // Drag and Drop
+        if (this.dropZone) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                this.dropZone.addEventListener(eventName, this.preventDefaults, false);
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                this.dropZone.addEventListener(eventName, () => this.dropZone.style.borderColor = 'var(--primary)', false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                this.dropZone.addEventListener(eventName, () => this.dropZone.style.borderColor = '', false);
+            });
+            
+            this.dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const file = dt.files[0];
+                if (file) this.onFileUpload(file);
+            }, false);
+        }
         
         this.unitSelect.addEventListener('change', () => this.onFilterChange());
         this.monthSelect.addEventListener('change', () => this.onFilterChange());
@@ -51,30 +76,36 @@ const Dashboard = {
         this.tableSearch.addEventListener('input', (e) => this.handleSearch(e.target.value));
     },
     
-    onFileUpload: async function(e, fileNum) {
-        const file = e.target.files[0];
+    preventDefaults: function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    },
+
+    onFileUpload: async function(file) {
         if (!file) return;
         
         const nameEl = this.file1Name;
+        const textEl = this.fileNameText;
         const statusEl = this.file1Status;
         
-        nameEl.textContent = file.name;
-        statusEl.textContent = "Uploading & Reading...";
-        statusEl.className = "upload-status";
+        nameEl.style.display = 'inline-flex';
+        textEl.textContent = file.name;
+        
+        statusEl.innerHTML = `<svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg> Reading Excel...`;
+        statusEl.className = "upload-status show loading";
         
         const result = await ExcelReader.handleFile1Upload(file);
             
         if (result.success) {
-            statusEl.textContent = `Success! (${result.rows} rows detected)`;
-            statusEl.className = "upload-status success";
+            statusEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Success! (${result.rows} rows)`;
+            statusEl.className = "upload-status show success";
             
-            // Initialize Dashboard since we only need one file
             if (AppState.file1Data) {
                 this.initializeDashboard();
             }
         } else {
-            statusEl.textContent = `Error: ${result.message}`;
-            statusEl.className = "upload-status error";
+            statusEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> ${result.message}`;
+            statusEl.className = "upload-status show error";
         }
     },
     
@@ -182,7 +213,16 @@ const Dashboard = {
         AppState.selectedMonthOnly = month;
         AppState.selectedUnit = unit;
         
-        this.updateDashboardView(year, month, unit);
+        // Visual loading state
+        const originalText = this.applyFilterText.textContent;
+        this.applyFilterText.textContent = "Applying...";
+        this.applyFilterBtn.disabled = true;
+        
+        setTimeout(() => {
+            this.updateDashboardView(year, month, unit);
+            this.applyFilterText.textContent = originalText;
+            this.applyFilterBtn.disabled = false;
+        }, 150); // Give UI time to update
     },
     
     resetFilters: function() {
@@ -220,11 +260,29 @@ const Dashboard = {
         ChartManager.updateAllCharts(chartData);
     },
     
+    animateValue: function(element, start, end, duration, formatter = val => val) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            // Ease out quad
+            const easeProgress = progress * (2 - progress);
+            const current = Math.floor(easeProgress * (end - start) + start);
+            element.textContent = formatter(current);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                element.textContent = formatter(end);
+            }
+        };
+        window.requestAnimationFrame(step);
+    },
+
     updateKPIs: function(kpis) {
-        this.kpiTotalRecords.textContent = kpis.totalRecords.toLocaleString('en-IN');
-        this.kpiTotalValue.textContent = `₹${DataProcessor.formatCurrency(kpis.totalValue)}`;
-        this.kpiAvgValue.textContent = `₹${DataProcessor.formatCurrency(kpis.avgValue)}`;
-        this.kpiCategories.textContent = DataProcessor.formatCurrency(kpis.totalUnits); // Repurposed for Units
+        this.animateValue(this.kpiTotalRecords, 0, kpis.totalRecords, 800, val => val.toLocaleString('en-IN'));
+        this.animateValue(this.kpiTotalValue, 0, kpis.totalValue, 1000, val => '₹' + DataProcessor.formatCurrency(val));
+        this.animateValue(this.kpiAvgValue, 0, kpis.avgValue, 1000, val => '₹' + DataProcessor.formatCurrency(val));
+        this.animateValue(this.kpiCategories, 0, kpis.totalUnits, 1000, val => DataProcessor.formatCurrency(val));
     },
     
     updateTable: function(data, searchTerm = "") {
@@ -276,6 +334,13 @@ const Dashboard = {
             return;
         }
         
+        // Add subtle loading state
+        const originalHtml = this.exportBtn.innerHTML;
+        this.exportBtn.innerHTML = "Exporting...";
+        this.exportBtn.disabled = true;
+        
+        setTimeout(() => {
+        
         // Create CSV Content
         const headers = ["Month", "Category/Unit", "Value (Rs.)", "Units (KWH)"];
         let csvContent = headers.join(",") + "\n";
@@ -295,10 +360,21 @@ const Dashboard = {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `dashboard_export_${AppState.selectedMonth}.csv`);
+        link.setAttribute("download", `dashboard_export_${AppState.selectedMonthOnly || 'all'}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        // Reset export button
+        setTimeout(() => {
+            this.exportBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Exported!`;
+            setTimeout(() => {
+                this.exportBtn.innerHTML = originalHtml;
+                this.exportBtn.disabled = false;
+            }, 2000);
+        }, 300);
+        
+        }, 100);
     }
 };
 
