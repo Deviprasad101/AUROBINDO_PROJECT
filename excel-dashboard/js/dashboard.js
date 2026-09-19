@@ -307,9 +307,11 @@ const Dashboard = {
             this.htMonthSelect.appendChild(hOpt);
         });
         
-        // Populate Units
+        // Populate Unit
         this.unitSelect.innerHTML = '<option value="">All Units</option>';
-        AppState.availableUnits.forEach(u => {
+        Array.from(AppState.availableUnits)
+            .filter(u => u !== 'HT Power (Merged)')
+            .sort().forEach(u => {
             const opt = document.createElement('option');
             opt.value = u;
             opt.textContent = u;
@@ -454,13 +456,19 @@ const Dashboard = {
         const chartData = DataProcessor.getChartData(filteredData);
         
         if (Object.keys(chartData.monthlyTrend).length > 0) {
-            ChartManager.createMonthlyTrendChart(chartData.monthlyTrend, 'chart-power-monthly-trend', 'powerMonthlyTrend');
+            // Plot combined UNITS instead of Values
+            const trendData = {};
+            filteredData.forEach(row => {
+                if (!trendData[row.monthYear]) trendData[row.monthYear] = 0;
+                trendData[row.monthYear] += (row.units || 0);
+            });
+            ChartManager.createMonthlyTrendChart(trendData, 'chart-power-monthly-trend', 'powerMonthlyTrend', 'Total Units (KWH)');
         }
         
         const pieCard = document.getElementById('power-pie-chart-card');
         if (Object.keys(chartData.sourceDist).length > 0) {
             pieCard.style.display = 'block';
-            ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-power-category-dist', 'powerCategoryDist');
+            ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-power-category-dist', 'powerCategoryDist', 'Total Units (KWH)');
             pieCard.parentElement.style.gridTemplateColumns = '2fr 1fr';
         } else {
             pieCard.style.display = 'none';

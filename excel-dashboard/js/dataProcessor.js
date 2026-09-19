@@ -178,8 +178,9 @@ const DataProcessor = {
             const matchYear = (year === "" || year === "all") ? true : rowYear === year;
             const matchMonth = (month === "" || month === "all") ? true : rowMonth === month;
             const matchUnit = unit === "" || row.unitName === unit;
+            const matchSource = row.unitName !== 'HT Power (Merged)';
             
-            return matchYear && matchMonth && matchUnit;
+            return matchYear && matchMonth && matchUnit && matchSource;
         });
     },
     
