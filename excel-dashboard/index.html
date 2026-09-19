@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Analytics Dashboard</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for Excel Reading -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js for Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div>
+                <h1>Excel Analytics Dashboard</h1>
+                <p class="subtitle">Monthly Performance Analysis</p>
+            </div>
+            <div class="header-actions">
+                <button id="export-btn" class="btn btn-outline" disabled>Export Data</button>
+            </div>
+        </header>
+
+        <!-- FILE UPLOAD SECTION -->
+        <section class="upload-section">
+            <div class="upload-card">
+                <h3>Upload Excel File</h3>
+                <p class="file-desc">Upload FDF Power Data or similar</p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="file1-input" accept=".xlsx, .xls">
+                    <label for="file1-input" class="btn btn-primary">Choose File</label>
+                    <span id="file1-name" class="file-name">No file chosen</span>
+                </div>
+                <div id="file1-status" class="upload-status"></div>
+            </div>
+        </section>
+
+        <!-- FILTER SECTION -->
+        <section class="filter-section">
+            <div class="filter-group">
+                <label for="unit-select">Unit (Tab)</label>
+                <select id="unit-select" disabled>
+                    <option value="">All Units</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="year-select">Year</label>
+                <select id="year-select" disabled>
+                    <option value="">All Years</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="month-select">Month</label>
+                <select id="month-select" disabled>
+                    <option value="">All Months</option>
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button id="apply-filter-btn" class="btn btn-primary" disabled>Apply Filter</button>
+                <button id="reset-filter-btn" class="btn btn-secondary" disabled>Reset</button>
+            </div>
+        </section>
+
+        <!-- DASHBOARD CONTENT (Hidden until files loaded and filtered) -->
+        <div id="dashboard-content" class="dashboard-content hidden">
+            
+            <!-- KPI CARDS -->
+            <section class="kpi-section">
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Records</div>
+                    <div class="kpi-value" id="kpi-total-records">-</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Value (Rs.)</div>
+                    <div class="kpi-value" id="kpi-total-value">-</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Average Value</div>
+                    <div class="kpi-value" id="kpi-avg-value">-</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Units (KWH)</div>
+                    <div class="kpi-value" id="kpi-categories">-</div>
+                </div>
+            </section>
+
+            <!-- CHARTS SECTION -->
+            <section class="charts-section">
+                <div class="chart-card chart-wide">
+                    <h3>Monthly Trend (Values)</h3>
+                    <div class="chart-container">
+                        <canvas id="chart-monthly-trend"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card chart-wide">
+                    <h3>Category/Unit Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="chart-category-dist"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DATA TABLE -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h3>Filtered Excel Records</h3>
+                    <div class="table-controls">
+                        <input type="text" id="table-search" placeholder="Search records...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date/Month</th>
+                                <th>Category / Unit</th>
+                                <th>Value (Rs.)</th>
+                                <th>Units (KWH)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body">
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="table-empty-state" class="empty-state hidden">
+                    No data found for the selected filters.
+                </div>
+            </section>
+        </div>
+
+        <footer class="dashboard-footer">
+            <p>Excel Analytics Dashboard &copy; 2026 - Client-Side Processing Only</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/excelReader.js"></script>
+    <script src="js/dataProcessor.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
