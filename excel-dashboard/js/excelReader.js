@@ -84,14 +84,24 @@ const ExcelReader = {
     /**
      * Handle file 1 upload
      */
-    handleFile1Upload: async function (file) {
+    handleFile1Upload: async function (files) {
         try {
-            // FDF Power file has headers on row 0
-            const data = await this.readFile(file, 0);
-            if (data.length === 0) throw new Error("File is empty or has no data rows.");
+            if (files instanceof FileList) {
+                files = Array.from(files);
+            } else if (!Array.isArray(files)) {
+                files = [files];
+            }
+            
+            let allData = [];
+            for (const file of files) {
+                const data = await this.readFile(file, 0);
+                allData = allData.concat(data);
+            }
+            
+            if (allData.length === 0) throw new Error("Files are empty or have no data rows.");
 
-            AppState.file1Data = data;
-            return { success: true, rows: data.length };
+            AppState.file1Data = allData;
+            return { success: true, rows: allData.length };
         } catch (error) {
             return { success: false, message: error.message || error };
         }

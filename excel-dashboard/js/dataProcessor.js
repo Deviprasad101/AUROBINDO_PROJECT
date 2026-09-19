@@ -149,8 +149,12 @@ const DataProcessor = {
             }
             
             if (dateObj && !isNaN(dateObj.getTime())) {
-                const year = dateObj.getFullYear();
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                // Add 12 hours to push the date to noon, making it immune to timezone shifts
+                // (e.g. midnight UTC becoming 8 PM the previous day in EST, or vice versa)
+                const noonDate = new Date(dateObj.getTime() + (12 * 60 * 60 * 1000));
+                
+                const year = noonDate.getFullYear();
+                const month = String(noonDate.getMonth() + 1).padStart(2, '0');
                 
                 // Extra check for years like "26" parsed as 1926 or 2026
                 const finalYear = year < 100 ? year + 2000 : year;
