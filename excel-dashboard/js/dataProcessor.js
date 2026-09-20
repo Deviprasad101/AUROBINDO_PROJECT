@@ -46,7 +46,18 @@ const DataProcessor = {
                         // Extract all columns that start with 'UNITS' (e.g. 'UNITS APL HC-01')
                         Object.keys(row).forEach(key => {
                             if (key.toLowerCase().startsWith('units')) {
-                                const categoryName = key.replace(/units?\s*/i, '').trim();
+                                let categoryName = key.replace(/units?\s*/i, '').trim();
+                                
+                                // Clean up APL HC categories and STRICTLY whitelist only the two requested
+                                const upperCat = categoryName.toUpperCase();
+                                if (upperCat === 'APL HC-01' || upperCat === 'APL HC-1' || upperCat === 'APL HC - 01') {
+                                    categoryName = 'APL HC-01';
+                                } else if (upperCat === 'APL HC-03' || upperCat === 'APL HC-3' || upperCat === 'APL HC - 03') {
+                                    categoryName = 'APL HC-03';
+                                } else {
+                                    return; // Skip 'aplh-01', 'aplhc-03', and any other garbage columns
+                                }
+
                                 const unitValue = parseFloat(row[key]) || 0;
                                 // HT Power doesn't provide monetary value per unit, we store 0
                                 unifiedData.push({
@@ -81,8 +92,22 @@ const DataProcessor = {
                 
                 const { monthYear, isValid } = this.parseDateToMonthYear(dateVal);
                 if (isValid) {
+                    let unitName = row._sheetName || 'Unknown';
+                    unitName = unitName.trim();
+                    
+                    // Normalize and filter APL HC units
+                    if (unitName.toUpperCase().includes('APL HC')) {
+                        if (unitName.includes('01') || unitName.includes('1')) {
+                            unitName = 'UNITS APL HC-01';
+                        } else if (unitName.includes('03') || unitName.includes('3')) {
+                            unitName = 'UNITS APL HC-03';
+                        } else {
+                            // User requested to remove the remaining two APL HC units
+                            return;
+                        }
+                    }
+                    
                     availableMonthsSet.add(monthYear);
-                    const unitName = row._sheetName || 'Unknown';
                     availableUnitsSet.add(unitName);
                     
                     const metricsObj = {
@@ -206,14 +231,14 @@ const DataProcessor = {
     /**
      * Get data filtered by year, month and unit
      */
-    getFilteredData: function(year = "", month = "", unit = "") {
+    getFilteredData: function(years = [], months = [], units = []) {
         return AppState.processedData.filter(row => {
             const rowYear = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
             
-            const matchYear = (year === "" || year === "all") ? true : rowYear === year;
-            const matchMonth = (month === "" || month === "all") ? true : rowMonth === month;
-            const matchUnit = unit === "" || row.unitName === unit;
+            const matchYear = (years.length === 0 || years.includes("all")) ? true : years.includes(rowYear);
+            const matchMonth = (months.length === 0 || months.includes("all")) ? true : months.includes(rowMonth);
+            const matchUnit = (units.length === 0 || units.includes("all")) ? true : units.includes(row.unitName);
             const matchSource = row.unitName !== 'HT Power (Merged)';
             
             return matchYear && matchMonth && matchUnit && matchSource;
@@ -224,13 +249,13 @@ const DataProcessor = {
      * Get data explicitly filtered for Power Consumption Analysis Tab
      * (Merges "Unit-VII" from FDF Power and "HT Power (Merged)")
      */
-    getPowerConsumptionData: function(year = "", month = "") {
+    getPowerConsumptionData: function(years = [], months = []) {
         return AppState.processedData.filter(row => {
             const rowYear = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
             
-            const matchYear = (year === "" || year === "all") ? true : rowYear === year;
-            const matchMonth = (month === "" || month === "all") ? true : rowMonth === month;
+            const matchYear = (years.length === 0 || years.includes("all")) ? true : years.includes(rowYear);
+            const matchMonth = (months.length === 0 || months.includes("all")) ? true : months.includes(rowMonth);
             
             // Only include Unit VII or HT Power
             const matchSource = row.unitName.replace(/\s+/g, '').toLowerCase() === 'unit-vii' || 
@@ -244,15 +269,15 @@ const DataProcessor = {
      * Get data explicitly filtered for HT Power Analysis Tab
      * (Only "HT Power (Merged)")
      */
-    getHTPowerData: function(year = "", month = "") {
+    getHTPowerData: function(years = [], months = []) {
         return AppState.processedData.filter(row => {
             const rowYear = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
             
-            const matchYear = (year === "" || year === "all") ? true : rowYear === year;
-            const matchMonth = (month === "" || month === "all") ? true : rowMonth === month;
+            const matchYear = (years.length === 0 || years.includes("all")) ? true : years.includes(rowYear);
+            const matchMonth = (months.length === 0 || months.includes("all")) ? true : months.includes(rowMonth);
             
-            // Only HT Power
+            // Only include HT Power
             const matchSource = row.unitName === 'HT Power (Merged)';
             
             return matchYear && matchMonth && matchSource;
@@ -303,24 +328,29 @@ const DataProcessor = {
     /**
      * Aggregate data for charts
      */
-    getChartData: function(filteredData, metricKey = 'total_units') {
-        // 1. Category Distribution (Pie) based on metric
+    getChartData: function(filteredData, metricKeys = ['total_units']) {
+        // 1. Category Distribution (Pie) based on first metric
         const sourceDist = {};
+        const primaryMetric = metricKeys[0];
+        
+        // 2. Monthly Trend (Filtered months) - Bar Chart (multiple metrics)
+        const monthlyTrend = {};
         
         filteredData.forEach(row => {
             // Category Dist
-            const metricVal = row.metrics ? (row.metrics[metricKey] || 0) : 0;
-            sourceDist[row.category] = (sourceDist[row.category] || 0) + metricVal;
-        });
-        
-        // 2. Monthly Trend (Filtered months) - Bar Chart (metric)
-        const monthlyTrend = {};
-        filteredData.forEach(row => {
+            const pieVal = row.metrics ? (row.metrics[primaryMetric] || 0) : (row.units || 0);
+            sourceDist[row.category] = (sourceDist[row.category] || 0) + pieVal;
+            
+            // Monthly Trend
             if (!monthlyTrend[row.monthYear]) {
-                monthlyTrend[row.monthYear] = 0;
+                monthlyTrend[row.monthYear] = {};
+                metricKeys.forEach(k => monthlyTrend[row.monthYear][k] = 0);
             }
-            const metricVal = row.metrics ? (row.metrics[metricKey] || 0) : 0;
-            monthlyTrend[row.monthYear] += metricVal;
+            
+            metricKeys.forEach(k => {
+                const metricVal = row.metrics ? (row.metrics[k] || 0) : (row.units || 0);
+                monthlyTrend[row.monthYear][k] += metricVal;
+            });
         });
         
         return {

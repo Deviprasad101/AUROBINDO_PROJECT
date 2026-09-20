@@ -57,36 +57,70 @@ const ChartManager = {
         }
     },
     
-    createMonthlyTrendChart: function(trendData, canvasId = 'chart-monthly-trend', chartKey = 'monthlyTrend', datasetLabel = 'Total Value (Rs.)') {
+    createMonthlyTrendChart: function(trendData, canvasId = 'chart-monthly-trend', chartKey = 'monthlyTrend', datasetLabels = ['Total Value (Rs.)']) {
         if (AppState.charts[chartKey]) {
             AppState.charts[chartKey].destroy();
         }
         
         const ctx = document.getElementById(canvasId).getContext('2d');
         const labels = Object.keys(trendData).sort();
-        const data = labels.map(l => trendData[l]);
         
         const formattedLabels = labels.map(l => DataProcessor.formatMonthName(l).split(' ')[0] + ' ' + l.split('-')[0].slice(2));
         
-        // Create a premium looking gradient for the bars
-        const gradient = ctx.createLinearGradient(0, 0, 0, 320);
-        gradient.addColorStop(0, 'rgba(79, 70, 229, 0.95)'); // Deep Indigo
-        gradient.addColorStop(1, 'rgba(79, 70, 229, 0.1)'); // Soft Indigo
+        // Define an array of premium gradients for multiple datasets
+        const gradients = [];
+        
+        // Primary: Deep Indigo
+        const grad1 = ctx.createLinearGradient(0, 0, 0, 320);
+        grad1.addColorStop(0, 'rgba(79, 70, 229, 0.95)');
+        grad1.addColorStop(1, 'rgba(79, 70, 229, 0.1)');
+        gradients.push({ bg: grad1, hover: this.colors.primary });
+        
+        // Secondary: Emerald Green
+        const grad2 = ctx.createLinearGradient(0, 0, 0, 320);
+        grad2.addColorStop(0, 'rgba(16, 185, 129, 0.95)');
+        grad2.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
+        gradients.push({ bg: grad2, hover: this.colors.success });
+        
+        // Tertiary: Sky Blue
+        const grad3 = ctx.createLinearGradient(0, 0, 0, 320);
+        grad3.addColorStop(0, 'rgba(14, 165, 233, 0.95)');
+        grad3.addColorStop(1, 'rgba(14, 165, 233, 0.1)');
+        gradients.push({ bg: grad3, hover: this.colors.secondary });
+        
+        // Quaternary: Amber
+        const grad4 = ctx.createLinearGradient(0, 0, 0, 320);
+        grad4.addColorStop(0, 'rgba(245, 158, 11, 0.95)');
+        grad4.addColorStop(1, 'rgba(245, 158, 11, 0.1)');
+        gradients.push({ bg: grad4, hover: this.colors.warning });
+        
+        // Build datasets array dynamically based on keys inside trendData
+        // Since trendData[month] = { key1: val1, key2: val2 }, we extract keys from the first month
+        const firstMonth = labels[0];
+        const keys = firstMonth ? Object.keys(trendData[firstMonth]) : [];
+        
+        const datasets = keys.map((key, index) => {
+            const data = labels.map(l => trendData[l][key]);
+            const labelName = datasetLabels[index] || datasetLabels[0];
+            const theme = gradients[index % gradients.length];
+            
+            return {
+                label: labelName,
+                data: data,
+                backgroundColor: theme.bg,
+                hoverBackgroundColor: theme.hover,
+                borderRadius: 6,
+                borderWidth: 0,
+                barPercentage: 0.6,
+                categoryPercentage: 0.8
+            };
+        });
         
         AppState.charts[chartKey] = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: formattedLabels,
-                datasets: [{
-                    label: datasetLabel,
-                    data: data,
-                    backgroundColor: gradient,
-                    hoverBackgroundColor: this.colors.primary,
-                    borderRadius: 6,
-                    borderWidth: 0,
-                    barPercentage: 0.5,
-                    categoryPercentage: 0.8
-                }]
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -100,8 +134,8 @@ const ChartManager = {
                         bodyFont: { size: 14, weight: '500' },
                         callbacks: {
                             label: function(context) {
-                                const isRs = datasetLabel.includes('Rs.');
-                                const prefix = isRs ? '₹' : '';
+                                const isRs = context.dataset.label.includes('Rs.');
+                                const prefix = isRs && context.raw > 0 ? '₹' : '';
                                 return `${context.dataset.label}: ${prefix}${DataProcessor.formatCurrency(context.raw)}`;
                             }
                         }
@@ -119,8 +153,10 @@ const ChartManager = {
                             font: { size: 12, weight: '500' },
                             color: '#94a3b8',
                             callback: function(value) {
-                                const isRs = datasetLabel.includes('Rs.');
-                                const prefix = isRs ? '₹' : '';
+                                // Default prefix to rupees if ALL datasets are rupees. 
+                                // Otherwise don't show prefix on Y axis to avoid confusion on mixed charts.
+                                const allRs = datasetLabels.every(l => l.includes('Rs.'));
+                                const prefix = allRs ? '₹' : '';
                                 
                                 let formattedValue = value;
                                 if (value >= 10000000) formattedValue = (value / 10000000).toFixed(1) + ' Cr';

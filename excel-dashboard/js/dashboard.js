@@ -22,26 +22,26 @@ const Dashboard = {
         this.powerDashboardContent = document.getElementById('power-dashboard-content');
         this.htDashboardContent = document.getElementById('ht-dashboard-content');
         
-        // Filters
-        this.unitSelect = document.getElementById('unit-select');
-        this.monthSelect = document.getElementById('month-select');
-        this.yearSelect = document.getElementById('year-select');
-        this.metricSelect = document.getElementById('metric-select');
+        // Filters (Multi-Select Containers)
+        this.unitSelect = document.getElementById('unit-multi-select');
+        this.monthSelect = document.getElementById('month-multi-select');
+        this.yearSelect = document.getElementById('year-multi-select');
+        this.metricSelect = document.getElementById('metric-multi-select');
         this.applyFilterBtn = document.getElementById('apply-filter-btn');
         this.applyFilterText = document.getElementById('apply-filter-text');
         this.resetFilterBtn = document.getElementById('reset-filter-btn');
         this.exportBtn = document.getElementById('export-btn');
         
         // Power Filters (Tab 2)
-        this.powerMonthSelect = document.getElementById('power-month-select');
-        this.powerYearSelect = document.getElementById('power-year-select');
+        this.powerMonthSelect = document.getElementById('power-month-multi-select');
+        this.powerYearSelect = document.getElementById('power-year-multi-select');
         this.powerApplyFilterBtn = document.getElementById('power-apply-filter-btn');
         this.powerApplyFilterText = document.getElementById('power-apply-filter-text');
         this.powerResetFilterBtn = document.getElementById('power-reset-filter-btn');
         
         // HT Filters (Tab 3)
-        this.htMonthSelect = document.getElementById('ht-month-select');
-        this.htYearSelect = document.getElementById('ht-year-select');
+        this.htMonthSelect = document.getElementById('ht-month-multi-select');
+        this.htYearSelect = document.getElementById('ht-year-multi-select');
         this.htApplyFilterBtn = document.getElementById('ht-apply-filter-btn');
         this.htApplyFilterText = document.getElementById('ht-apply-filter-text');
         this.htResetFilterBtn = document.getElementById('ht-reset-filter-btn');
@@ -108,23 +108,33 @@ const Dashboard = {
             }, false);
         }
         
-        this.unitSelect.addEventListener('change', () => this.onFilterChange());
-        this.monthSelect.addEventListener('change', () => this.onFilterChange());
-        this.yearSelect.addEventListener('change', () => this.onFilterChange());
-        this.metricSelect.addEventListener('change', () => this.onFilterChange());
+        // Setup Custom Multi-Selects
+        this.setupMultiSelect(this.unitSelect, () => this.onFilterChange());
+        this.setupMultiSelect(this.monthSelect, () => this.onFilterChange());
+        this.setupMultiSelect(this.yearSelect, () => this.onFilterChange());
+        this.setupMultiSelect(this.metricSelect, () => this.onFilterChange());
         
         this.applyFilterBtn.addEventListener('click', () => this.applyFilter());
         this.resetFilterBtn.addEventListener('click', () => this.resetFilters());
         
-        this.powerMonthSelect.addEventListener('change', () => this.onPowerFilterChange());
-        this.powerYearSelect.addEventListener('change', () => this.onPowerFilterChange());
+        this.setupMultiSelect(this.powerMonthSelect, () => this.onPowerFilterChange());
+        this.setupMultiSelect(this.powerYearSelect, () => this.onPowerFilterChange());
         this.powerApplyFilterBtn.addEventListener('click', () => this.applyPowerFilter());
         this.powerResetFilterBtn.addEventListener('click', () => this.resetPowerFilters());
         
-        this.htMonthSelect.addEventListener('change', () => this.onHtFilterChange());
-        this.htYearSelect.addEventListener('change', () => this.onHtFilterChange());
+        this.setupMultiSelect(this.htMonthSelect, () => this.onHtFilterChange());
+        this.setupMultiSelect(this.htYearSelect, () => this.onHtFilterChange());
         this.htApplyFilterBtn.addEventListener('click', () => this.applyHtFilter());
         this.htResetFilterBtn.addEventListener('click', () => this.resetHtFilters());
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.custom-multi-select .select-items').forEach(items => {
+                if (!items.parentElement.contains(e.target)) {
+                    items.classList.add('hidden');
+                }
+            });
+        });
         
         this.exportBtn.addEventListener('click', () => this.exportToCSV());
         this.tableSearch.addEventListener('input', (e) => this.handleSearch(e.target.value));
@@ -149,6 +159,106 @@ const Dashboard = {
             });
         });
     },
+    
+    // --- Multi-Select Helpers ---
+    setupMultiSelect: function(containerElement, changeCallback) {
+        if (!containerElement) return;
+        
+        const selectedDiv = containerElement.querySelector('.select-selected');
+        const itemsDiv = containerElement.querySelector('.select-items');
+        
+        if (!selectedDiv || !itemsDiv) return;
+        
+        // Toggle dropdown
+        selectedDiv.addEventListener('click', (e) => {
+            if (containerElement.dataset.disabled === "true") return;
+            
+            // Close others
+            document.querySelectorAll('.custom-multi-select .select-items').forEach(items => {
+                if (items !== itemsDiv) items.classList.add('hidden');
+            });
+            
+            itemsDiv.classList.toggle('hidden');
+        });
+        
+        // Handle checkbox changes
+        itemsDiv.addEventListener('change', (e) => {
+            if (e.target.type === 'checkbox') {
+                const allCheckboxes = Array.from(itemsDiv.querySelectorAll('input[type="checkbox"]'));
+                const allOption = allCheckboxes.find(cb => cb.value === 'all');
+                
+                if (allOption) {
+                    if (e.target.value === 'all') {
+                        // If "All" was checked, check everything. If unchecked, uncheck everything.
+                        allCheckboxes.forEach(cb => cb.checked = e.target.checked);
+                    } else {
+                        // If a specific option was checked/unchecked
+                        const otherCheckboxes = allCheckboxes.filter(cb => cb.value !== 'all');
+                        const allOthersChecked = otherCheckboxes.every(cb => cb.checked);
+                        allOption.checked = allOthersChecked;
+                    }
+                }
+                
+                this.updateMultiSelectText(containerElement);
+                if (changeCallback) changeCallback();
+            }
+        });
+    },
+    
+    updateMultiSelectText: function(containerElement) {
+        if (!containerElement) return;
+        const textSpan = containerElement.querySelector('.selected-text');
+        const checkboxes = Array.from(containerElement.querySelectorAll('input[type="checkbox"]:checked'));
+        const allCheckboxes = Array.from(containerElement.querySelectorAll('input[type="checkbox"]'));
+        const allOption = allCheckboxes.find(cb => cb.value === 'all');
+        
+        if (checkboxes.length === 0) {
+            textSpan.textContent = "None Selected";
+        } else if (allOption && allOption.checked && checkboxes.length === allCheckboxes.length) {
+            // Everything is checked, show the "all" text
+            textSpan.textContent = allOption.parentElement.textContent.trim();
+        } else if (checkboxes.length === 1) {
+            // Only one item checked
+            if (checkboxes[0].value === 'all') {
+                textSpan.textContent = checkboxes[0].parentElement.textContent.trim();
+            } else {
+                textSpan.textContent = checkboxes[0].dataset.name || checkboxes[0].parentElement.textContent.trim();
+            }
+        } else {
+            // Multiple items checked but not all
+            // exclude 'all' checkbox from count if it was somehow checked alone (shouldn't happen with logic above)
+            const count = checkboxes.filter(cb => cb.value !== 'all').length;
+            textSpan.textContent = `${count} Selected`;
+        }
+    },
+    
+    getMultiSelectValues: function(containerElement) {
+        if (!containerElement) return [];
+        const checked = Array.from(containerElement.querySelectorAll('input[type="checkbox"]:checked'));
+        return checked.filter(cb => cb.value !== 'all').map(cb => cb.value);
+    },
+    
+    getMultiSelectNames: function(containerElement) {
+        if (!containerElement) return [];
+        const checked = Array.from(containerElement.querySelectorAll('input[type="checkbox"]:checked'));
+        return checked.filter(cb => cb.value !== 'all').map(cb => cb.dataset.name || cb.parentElement.textContent.trim());
+    },
+    
+    setMultiSelectValues: function(containerElement, valuesArray) {
+        if (!containerElement) return;
+        const checkboxes = containerElement.querySelectorAll('input[type="checkbox"]');
+        const hasAll = valuesArray.includes('all');
+        
+        checkboxes.forEach(cb => {
+            if (hasAll) {
+                cb.checked = true;
+            } else {
+                cb.checked = valuesArray.includes(cb.value);
+            }
+        });
+        this.updateMultiSelectText(containerElement);
+    },
+    // ----------------------------
     
     preventDefaults: function(e) {
         e.preventDefault();
@@ -196,21 +306,21 @@ const Dashboard = {
         this.populateFilters();
         
         // Enable Filters
-        this.unitSelect.disabled = false;
-        this.monthSelect.disabled = false;
-        this.yearSelect.disabled = false;
-        if (this.metricSelect) this.metricSelect.disabled = false;
+        this.unitSelect.dataset.disabled = "false";
+        this.monthSelect.dataset.disabled = "false";
+        this.yearSelect.dataset.disabled = "false";
+        if (this.metricSelect) this.metricSelect.dataset.disabled = "false";
         this.applyFilterBtn.disabled = false;
         this.resetFilterBtn.disabled = false;
         this.exportBtn.disabled = false;
         
-        this.powerMonthSelect.disabled = false;
-        this.powerYearSelect.disabled = false;
+        this.powerMonthSelect.dataset.disabled = "false";
+        this.powerYearSelect.dataset.disabled = "false";
         this.powerApplyFilterBtn.disabled = false;
         this.powerResetFilterBtn.disabled = false;
         
-        this.htMonthSelect.disabled = false;
-        this.htYearSelect.disabled = false;
+        this.htMonthSelect.dataset.disabled = "false";
+        this.htYearSelect.dataset.disabled = "false";
         this.htApplyFilterBtn.disabled = false;
         this.htResetFilterBtn.disabled = false;
         
@@ -229,31 +339,46 @@ const Dashboard = {
             const latest = AppState.availableMonths[AppState.availableMonths.length - 1];
             const [year, month] = latest.split('-');
             
-            AppState.selectedYear = year;
-            AppState.selectedMonthOnly = month;
-            AppState.selectedUnit = "";
+            AppState.selectedYear = [year];
+            AppState.selectedMonthOnly = [month];
+            AppState.selectedUnit = ['all'];
             
-            AppState.powerSelectedYear = year;
-            AppState.powerSelectedMonthOnly = month;
+            AppState.powerSelectedYear = [year];
+            AppState.powerSelectedMonthOnly = [month];
             
-            AppState.htSelectedYear = year;
-            AppState.htSelectedMonthOnly = month;
+            AppState.htSelectedYear = [year];
+            AppState.htSelectedMonthOnly = [month];
             
             // Set dropdowns
-            this.yearSelect.value = year;
-            this.monthSelect.value = month;
-            this.unitSelect.value = "";
+            this.setMultiSelectValues(this.yearSelect, [year]);
+            this.setMultiSelectValues(this.monthSelect, [month]);
+            this.setMultiSelectValues(this.unitSelect, ['all']);
+            if (this.metricSelect) this.setMultiSelectValues(this.metricSelect, ['total_units']);
             
-            this.powerYearSelect.value = year;
-            this.powerMonthSelect.value = month;
+            this.setMultiSelectValues(this.powerYearSelect, [year]);
+            this.setMultiSelectValues(this.powerMonthSelect, [month]);
             
-            this.htYearSelect.value = year;
-            this.htMonthSelect.value = month;
+            this.setMultiSelectValues(this.htYearSelect, [year]);
+            this.setMultiSelectValues(this.htMonthSelect, [month]);
             
-            this.updateDashboardView(year, month, "");
-            this.updatePowerDashboardView(year, month);
-            this.updateHTDashboardView(year, month);
+            this.updateDashboardView([year], [month], ['all']);
+            this.updatePowerDashboardView([year], [month]);
+            this.updateHTDashboardView([year], [month]);
         }
+    },
+    
+    populateMultiSelect: function(containerElement, options, allText = "All") {
+        if (!containerElement) return;
+        const itemsDiv = containerElement.querySelector('.select-items');
+        if (!itemsDiv) return;
+        
+        // Reset with 'all' option
+        itemsDiv.innerHTML = `<label class="checkbox-container"><input type="checkbox" value="all" checked> ${allText}<span class="checkmark"></span></label>`;
+        
+        options.forEach(opt => {
+            itemsDiv.innerHTML += `<label class="checkbox-container"><input type="checkbox" value="${opt.value}"> ${opt.text}<span class="checkmark"></span></label>`;
+        });
+        this.updateMultiSelectText(containerElement);
     },
     
     populateFilters: function() {
@@ -267,59 +392,24 @@ const Dashboard = {
         });
         
         // Populate Year
-        this.yearSelect.innerHTML = '<option value="">All Years</option>';
-        this.powerYearSelect.innerHTML = '<option value="">All Years</option>';
-        this.htYearSelect.innerHTML = '<option value="">All Years</option>';
-        Array.from(years).sort().reverse().forEach(y => {
-            const opt = document.createElement('option');
-            opt.value = y;
-            opt.textContent = y;
-            this.yearSelect.appendChild(opt);
-            
-            const pOpt = document.createElement('option');
-            pOpt.value = y;
-            pOpt.textContent = y;
-            this.powerYearSelect.appendChild(pOpt);
-            
-            const hOpt = document.createElement('option');
-            hOpt.value = y;
-            hOpt.textContent = y;
-            this.htYearSelect.appendChild(hOpt);
-        });
+        const yearOptions = Array.from(years).sort().reverse().map(y => ({value: y, text: y}));
+        this.populateMultiSelect(this.yearSelect, yearOptions, "All Years");
+        this.populateMultiSelect(this.powerYearSelect, yearOptions, "All Years");
+        this.populateMultiSelect(this.htYearSelect, yearOptions, "All Years");
         
         // Populate Month
-        this.monthSelect.innerHTML = '<option value="">All Months</option>';
-        this.powerMonthSelect.innerHTML = '<option value="">All Months</option>';
-        this.htMonthSelect.innerHTML = '<option value="">All Months</option>';
         const monthNames = ["January", "February", "March", "April", "May", "June", 
                             "July", "August", "September", "October", "November", "December"];
-        Array.from(months).sort().forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m;
-            opt.textContent = monthNames[parseInt(m) - 1];
-            this.monthSelect.appendChild(opt);
-            
-            const pOpt = document.createElement('option');
-            pOpt.value = m;
-            pOpt.textContent = monthNames[parseInt(m) - 1];
-            this.powerMonthSelect.appendChild(pOpt);
-            
-            const hOpt = document.createElement('option');
-            hOpt.value = m;
-            hOpt.textContent = monthNames[parseInt(m) - 1];
-            this.htMonthSelect.appendChild(hOpt);
-        });
+        const monthOptions = Array.from(months).sort().map(m => ({value: m, text: monthNames[parseInt(m) - 1]}));
+        this.populateMultiSelect(this.monthSelect, monthOptions, "All Months");
+        this.populateMultiSelect(this.powerMonthSelect, monthOptions, "All Months");
+        this.populateMultiSelect(this.htMonthSelect, monthOptions, "All Months");
         
         // Populate Unit
-        this.unitSelect.innerHTML = '<option value="">All Units</option>';
-        Array.from(AppState.availableUnits)
+        const unitOptions = Array.from(AppState.availableUnits)
             .filter(u => u !== 'HT Power (Merged)')
-            .sort().forEach(u => {
-            const opt = document.createElement('option');
-            opt.value = u;
-            opt.textContent = u;
-            this.unitSelect.appendChild(opt);
-        });
+            .sort().map(u => ({value: u, text: u}));
+        this.populateMultiSelect(this.unitSelect, unitOptions, "All Units");
     },
     
     onFilterChange: function() {
@@ -337,13 +427,13 @@ const Dashboard = {
     },
     
     applyFilter: function() {
-        const year = this.yearSelect.value;
-        const month = this.monthSelect.value;
-        const unit = this.unitSelect.value;
+        const years = this.getMultiSelectValues(this.yearSelect);
+        const months = this.getMultiSelectValues(this.monthSelect);
+        const units = this.getMultiSelectValues(this.unitSelect);
         
-        AppState.selectedYear = year;
-        AppState.selectedMonthOnly = month;
-        AppState.selectedUnit = unit;
+        AppState.selectedYear = years;
+        AppState.selectedMonthOnly = months;
+        AppState.selectedUnit = units;
         
         // Visual loading state
         const originalText = this.applyFilterText.textContent;
@@ -351,7 +441,7 @@ const Dashboard = {
         this.applyFilterBtn.disabled = true;
         
         setTimeout(() => {
-            this.updateDashboardView(year, month, unit);
+            this.updateDashboardView(years, months, units);
             this.applyFilterText.textContent = originalText;
             this.applyFilterBtn.disabled = false;
         }, 150); // Give UI time to update
@@ -362,45 +452,50 @@ const Dashboard = {
             const latest = AppState.availableMonths[AppState.availableMonths.length - 1];
             const [year, month] = latest.split('-');
             
-            AppState.selectedYear = year;
-            AppState.selectedMonthOnly = month;
-            AppState.selectedUnit = "";
+            AppState.selectedYear = [year];
+            AppState.selectedMonthOnly = [month];
+            AppState.selectedUnit = ['all'];
             
-            this.yearSelect.value = year;
-            this.monthSelect.value = month;
-            this.unitSelect.value = "";
+            this.setMultiSelectValues(this.yearSelect, [year]);
+            this.setMultiSelectValues(this.monthSelect, [month]);
+            this.setMultiSelectValues(this.unitSelect, ['all']);
             
-            this.updateDashboardView(year, month, "");
+            this.updateDashboardView([year], [month], ['all']);
             this.tableSearch.value = "";
         }
     },
     
-    updateDashboardView: function(year, month, unit) {
-        // Get selected metric
-        const metricKey = this.metricSelect ? this.metricSelect.value : 'total_units';
-        const metricName = this.metricSelect ? this.metricSelect.options[this.metricSelect.selectedIndex].text : 'Total Units (KWH)';
+    updateDashboardView: function(years, months, units) {
+        // Get selected metrics
+        let metricKeys = this.getMultiSelectValues(this.metricSelect);
+        let metricNames = this.getMultiSelectNames(this.metricSelect);
+        
+        if (metricKeys.length === 0) {
+            metricKeys = ['total_units'];
+            metricNames = ['Total Units (KWH)'];
+        }
         
         // Get filtered data
-        const filteredData = DataProcessor.getFilteredData(year, month, unit);
+        const filteredData = DataProcessor.getFilteredData(years, months, units);
         
-        // Update KPIs (total value and units are still calculated, but we could make KPI dynamic too if desired)
+        // Update KPIs
         const kpis = DataProcessor.calculateKPIs(filteredData);
         this.updateKPIs(kpis);
         
         // Update Table
-        this.updateTable(filteredData, this.dataTableBody, this.tableEmptyState, "", metricKey, metricName);
+        this.updateTable(filteredData, this.dataTableBody, this.tableEmptyState, "", metricKeys, metricNames);
         
-        // Update Charts with selected metric
-        const chartData = DataProcessor.getChartData(filteredData, metricKey);
+        // Update Charts with selected metrics
+        const chartData = DataProcessor.getChartData(filteredData, metricKeys);
         
         if (Object.keys(chartData.monthlyTrend).length > 0) {
-            ChartManager.createMonthlyTrendChart(chartData.monthlyTrend, 'chart-monthly-trend', 'monthlyTrend', metricName);
+            ChartManager.createMonthlyTrendChart(chartData.monthlyTrend, 'chart-monthly-trend', 'monthlyTrend', metricNames);
         }
         
         const pieCard = document.getElementById('pie-chart-card');
-        if (Object.keys(chartData.sourceDist).length > 0 && !AppState.selectedUnit) {
+        if (Object.keys(chartData.sourceDist).length > 0 && units && (units.includes('all') || units.length > 1)) {
             pieCard.style.display = 'block';
-            ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-category-dist', 'categoryDist', metricName);
+            ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-category-dist', 'categoryDist', metricNames[0]);
             pieCard.parentElement.style.gridTemplateColumns = '2fr 1fr';
         } else {
             pieCard.style.display = 'none';
@@ -415,18 +510,18 @@ const Dashboard = {
     },
     
     applyPowerFilter: function() {
-        const year = this.powerYearSelect.value;
-        const month = this.powerMonthSelect.value;
+        const years = this.getMultiSelectValues(this.powerYearSelect);
+        const months = this.getMultiSelectValues(this.powerMonthSelect);
         
-        AppState.powerSelectedYear = year;
-        AppState.powerSelectedMonthOnly = month;
+        AppState.powerSelectedYear = years;
+        AppState.powerSelectedMonthOnly = months;
         
         const originalText = this.powerApplyFilterText.textContent;
         this.powerApplyFilterText.textContent = "Applying...";
         this.powerApplyFilterBtn.disabled = true;
         
         setTimeout(() => {
-            this.updatePowerDashboardView(year, month);
+            this.updatePowerDashboardView(years, months);
             this.powerApplyFilterText.textContent = originalText;
             this.powerApplyFilterBtn.disabled = false;
         }, 150);
@@ -437,13 +532,13 @@ const Dashboard = {
             const latest = AppState.availableMonths[AppState.availableMonths.length - 1];
             const [year, month] = latest.split('-');
             
-            AppState.powerSelectedYear = year;
-            AppState.powerSelectedMonthOnly = month;
+            AppState.powerSelectedYear = [year];
+            AppState.powerSelectedMonthOnly = [month];
             
-            this.powerYearSelect.value = year;
-            this.powerMonthSelect.value = month;
+            this.setMultiSelectValues(this.powerYearSelect, [year]);
+            this.setMultiSelectValues(this.powerMonthSelect, [month]);
             
-            this.updatePowerDashboardView(year, month);
+            this.updatePowerDashboardView([year], [month]);
             this.powerTableSearch.value = "";
         }
     },
@@ -466,10 +561,10 @@ const Dashboard = {
             // Plot combined UNITS instead of Values
             const trendData = {};
             filteredData.forEach(row => {
-                if (!trendData[row.monthYear]) trendData[row.monthYear] = 0;
-                trendData[row.monthYear] += (row.units || 0);
+                if (!trendData[row.monthYear]) trendData[row.monthYear] = { units: 0 };
+                trendData[row.monthYear].units += (row.units || 0);
             });
-            ChartManager.createMonthlyTrendChart(trendData, 'chart-power-monthly-trend', 'powerMonthlyTrend', 'Total Units (KWH)');
+            ChartManager.createMonthlyTrendChart(trendData, 'chart-power-monthly-trend', 'powerMonthlyTrend', ['Total Units (KWH)']);
         }
         
         const pieCard = document.getElementById('power-pie-chart-card');
@@ -495,18 +590,18 @@ const Dashboard = {
     onHtFilterChange: function() {},
     
     applyHtFilter: function() {
-        const year = this.htYearSelect.value;
-        const month = this.htMonthSelect.value;
+        const years = this.getMultiSelectValues(this.htYearSelect);
+        const months = this.getMultiSelectValues(this.htMonthSelect);
         
-        AppState.htSelectedYear = year;
-        AppState.htSelectedMonthOnly = month;
+        AppState.htSelectedYear = years;
+        AppState.htSelectedMonthOnly = months;
         
         const originalText = this.htApplyFilterText.textContent;
         this.htApplyFilterText.textContent = "Applying...";
         this.htApplyFilterBtn.disabled = true;
         
         setTimeout(() => {
-            this.updateHTDashboardView(year, month);
+            this.updateHTDashboardView(years, months);
             this.htApplyFilterText.textContent = originalText;
             this.htApplyFilterBtn.disabled = false;
         }, 150);
@@ -517,13 +612,13 @@ const Dashboard = {
             const latest = AppState.availableMonths[AppState.availableMonths.length - 1];
             const [year, month] = latest.split('-');
             
-            AppState.htSelectedYear = year;
-            AppState.htSelectedMonthOnly = month;
+            AppState.htSelectedYear = [year];
+            AppState.htSelectedMonthOnly = [month];
             
-            this.htYearSelect.value = year;
-            this.htMonthSelect.value = month;
+            this.setMultiSelectValues(this.htYearSelect, [year]);
+            this.setMultiSelectValues(this.htMonthSelect, [month]);
             
-            this.updateHTDashboardView(year, month);
+            this.updateHTDashboardView([year], [month]);
             this.htTableSearch.value = "";
         }
     },
@@ -571,10 +666,10 @@ const Dashboard = {
             // Re-use monthly trend but map to units instead of value (since value is 0 for HT)
             const trendData = {};
             filteredData.forEach(row => {
-                if (!trendData[row.monthYear]) trendData[row.monthYear] = 0;
-                trendData[row.monthYear] += (row.units || 0);
+                if (!trendData[row.monthYear]) trendData[row.monthYear] = { units: 0 };
+                trendData[row.monthYear].units += (row.units || 0);
             });
-            ChartManager.createMonthlyTrendChart(trendData, 'chart-ht-monthly-trend', 'htMonthlyTrend', 'Total Units (KWH)');
+            ChartManager.createMonthlyTrendChart(trendData, 'chart-ht-monthly-trend', 'htMonthlyTrend', ['Total Units (KWH)']);
         }
         
         const pieCard = document.getElementById('ht-pie-chart-card');
@@ -615,7 +710,7 @@ const Dashboard = {
         this.animateValue(this.kpiCategories, 0, kpis.totalUnits, 1000, val => DataProcessor.formatCurrency(val));
     },
     
-    updateTable: function(data, tbodyEl, emptyStateEl, searchTerm = "", metricKey = "total_units", metricName = "Total Units (KWH)") {
+    updateTable: function(data, tbodyEl, emptyStateEl, searchTerm = "", metricKeys = ["total_units"], metricNames = ["Total Units (KWH)"]) {
         tbodyEl.innerHTML = '';
         
         // Update Table Header if it's the main dashboard table
@@ -624,10 +719,14 @@ const Dashboard = {
             if (table && table.tagName === 'TABLE') {
                 const thead = table.querySelector('thead tr');
                 if (thead) {
-                    const ths = thead.querySelectorAll('th');
-                    if (ths.length >= 4) {
-                        ths[3].textContent = metricName;
-                    }
+                    thead.innerHTML = `
+                        <th>Date/Month</th>
+                        <th>Category / Unit</th>
+                        <th>Value (Rs.)</th>
+                    `;
+                    metricNames.forEach(name => {
+                        thead.innerHTML += `<th>${name}</th>`;
+                    });
                 }
             }
         }
@@ -653,14 +752,30 @@ const Dashboard = {
             displayData.forEach(row => {
                 const tr = document.createElement('tr');
                 
-                const metricVal = row.metrics ? (row.metrics[metricKey] || 0) : (row.units || 0);
-                
-                tr.innerHTML = `
-                    <td>${DataProcessor.formatMonthName(row.monthYear)}</td>
-                    <td>${row.category}</td>
-                    <td>${row.value > 0 ? '₹' + DataProcessor.formatCurrency(row.value) : '-'}</td>
-                    <td>${DataProcessor.formatCurrency(metricVal)}</td>
-                `;
+                if (tbodyEl.id === 'data-table-body') {
+                    // Main Dashboard Table
+                    let html = `
+                        <td>${DataProcessor.formatMonthName(row.monthYear)}</td>
+                        <td>${row.category}</td>
+                        <td>${row.value > 0 ? '₹' + DataProcessor.formatCurrency(row.value) : '-'}</td>
+                    `;
+                    metricKeys.forEach(key => {
+                        const metricVal = row.metrics ? (row.metrics[key] || 0) : (row.units || 0);
+                        const isRupees = key.includes('value') || key.includes('rate');
+                        const prefix = isRupees && metricVal > 0 ? '₹' : '';
+                        html += `<td>${prefix}${DataProcessor.formatCurrency(metricVal)}</td>`;
+                    });
+                    tr.innerHTML = html;
+                } else if (tbodyEl.id === 'power-data-table-body') {
+                    // Power Dashboard Table
+                    tr.innerHTML = `
+                        <td>${DataProcessor.formatMonthName(row.monthYear)}</td>
+                        <td>${row.source}</td>
+                        <td>${row.category}</td>
+                        <td>${row.value > 0 ? '₹' + DataProcessor.formatCurrency(row.value) : '-'}</td>
+                        <td>${DataProcessor.formatCurrency(row.units)}</td>
+                    `;
+                }
                 
                 tbodyEl.appendChild(tr);
             });
