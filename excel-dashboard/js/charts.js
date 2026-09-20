@@ -100,7 +100,9 @@ const ChartManager = {
                         bodyFont: { size: 14, weight: '500' },
                         callbacks: {
                             label: function(context) {
-                                return `Value: ₹${DataProcessor.formatCurrency(context.raw)}`;
+                                const isRs = datasetLabel.includes('Rs.');
+                                const prefix = isRs ? '₹' : '';
+                                return `${context.dataset.label}: ${prefix}${DataProcessor.formatCurrency(context.raw)}`;
                             }
                         }
                     }
@@ -117,10 +119,15 @@ const ChartManager = {
                             font: { size: 12, weight: '500' },
                             color: '#94a3b8',
                             callback: function(value) {
-                                if (value >= 10000000) return '₹' + (value / 10000000).toFixed(1) + ' Cr';
-                                if (value >= 100000) return '₹' + (value / 100000).toFixed(1) + ' L';
-                                if (value >= 1000) return '₹' + (value / 1000).toFixed(1) + ' K';
-                                return '₹' + value;
+                                const isRs = datasetLabel.includes('Rs.');
+                                const prefix = isRs ? '₹' : '';
+                                
+                                let formattedValue = value;
+                                if (value >= 10000000) formattedValue = (value / 10000000).toFixed(1) + ' Cr';
+                                else if (value >= 100000) formattedValue = (value / 100000).toFixed(1) + ' L';
+                                else if (value >= 1000) formattedValue = (value / 1000).toFixed(1) + ' K';
+                                
+                                return prefix + formattedValue;
                             }
                         }
                     },
@@ -188,8 +195,10 @@ const ChartManager = {
                         callbacks: {
                             label: function(context) {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.raw / total) * 100).toFixed(1);
-                                return ` ${context.label}: ${DataProcessor.formatCurrency(context.raw)} KWH (${percentage}%)`;
+                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                const isRs = datasetLabel.includes('Rs.');
+                                const prefix = isRs ? '₹' : '';
+                                return ` ${context.label}: ${prefix}${DataProcessor.formatCurrency(context.raw)} (${percentage}%)`;
                             }
                         }
                     }

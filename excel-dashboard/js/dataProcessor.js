@@ -56,6 +56,16 @@ const DataProcessor = {
                                     category: categoryName,
                                     value: 0,
                                     units: unitValue,
+                                    metrics: {
+                                        'cmd_kva': 0, 'rmd_kva': 0, 'eb_units_kvah': 0,
+                                        'wheeling_css_as': 0, 'eb_value_total': 0,
+                                        'oa_issued_iex': 0, 'oa_considered_iex': 0,
+                                        'iex_value': 0, 'oa_unit_ltppa': 0,
+                                        'ltppa_value': 0, 'solar_rooftop': 0,
+                                        'dg_units': 0, 'total_units': unitValue,
+                                        'total_value': 0, 'avg_rate': 0
+                                    },
+                                    remarks: '',
                                     source: 'HT power consumption.xlsx',
                                     originalRow: row
                                 });
@@ -75,13 +85,35 @@ const DataProcessor = {
                     const unitName = row._sheetName || 'Unknown';
                     availableUnitsSet.add(unitName);
                     
+                    const metricsObj = {
+                        'cmd_kva': parseFloat(getFlexibleValue(row, 'CMD')) || 0,
+                        'rmd_kva': parseFloat(getFlexibleValue(row, 'RMD')) || 0,
+                        'eb_units_kvah': parseFloat(getFlexibleValue(row, 'EB Units')) || 0,
+                        'wheeling_css_as': parseFloat(getFlexibleValue(row, 'Wheeling')) || 0,
+                        'eb_value_total': parseFloat(getFlexibleValue(row, 'EB Value Total')) || 0,
+                        'oa_issued_iex': parseFloat(getFlexibleValue(row, 'OA Issued')) || 0,
+                        'oa_considered_iex': parseFloat(getFlexibleValue(row, 'OA Considered')) || 0,
+                        'iex_value': parseFloat(getFlexibleValue(row, 'IEX-Value')) || 0,
+                        'oa_unit_ltppa': parseFloat(getFlexibleValue(row, 'LTPPA (KWh)') || getFlexibleValue(row, 'OA Unit')) || 0,
+                        'ltppa_value': parseFloat(getFlexibleValue(row, 'LTPPA-Value')) || 0,
+                        'solar_rooftop': parseFloat(getFlexibleValue(row, 'Solar')) || 0,
+                        'dg_units': parseFloat(getFlexibleValue(row, 'DG Units')) || 0,
+                        'total_units': parseFloat(getFlexibleValue(row, 'Total Unts')) || 0,
+                        'total_value': parseFloat(getFlexibleValue(row, 'Total Value')) || 0,
+                        'avg_rate': parseFloat(getFlexibleValue(row, 'Avg. Rate')) || 0
+                    };
+                    
+                    const remarksStr = getFlexibleValue(row, 'Remarks') || '';
+
                     unifiedData.push({
                         _rawDate: dateVal,
                         monthYear: monthYear,
                         unitName: unitName,
                         category: getFlexibleValue(row, CONFIG.file1.categoryColumn) || 'Unknown',
-                        value: parseFloat(getFlexibleValue(row, CONFIG.file1.valueColumn)) || 0,
-                        units: parseFloat(getFlexibleValue(row, CONFIG.file1.unitsColumn)) || 0,
+                        value: metricsObj.total_value,
+                        units: metricsObj.total_units,
+                        metrics: metricsObj,
+                        remarks: remarksStr,
                         source: row._fileName || CONFIG.file1.sourceName,
                         originalRow: row
                     });
@@ -271,22 +303,24 @@ const DataProcessor = {
     /**
      * Aggregate data for charts
      */
-    getChartData: function(filteredData) {
-        // 1. Category Distribution (Pie) based on Units
+    getChartData: function(filteredData, metricKey = 'total_units') {
+        // 1. Category Distribution (Pie) based on metric
         const sourceDist = {};
         
         filteredData.forEach(row => {
             // Category Dist
-            sourceDist[row.category] = (sourceDist[row.category] || 0) + (row.units || 0);
+            const metricVal = row.metrics ? (row.metrics[metricKey] || 0) : 0;
+            sourceDist[row.category] = (sourceDist[row.category] || 0) + metricVal;
         });
         
-        // 2. Monthly Trend (Filtered months) - Bar Chart (Values)
+        // 2. Monthly Trend (Filtered months) - Bar Chart (metric)
         const monthlyTrend = {};
         filteredData.forEach(row => {
             if (!monthlyTrend[row.monthYear]) {
                 monthlyTrend[row.monthYear] = 0;
             }
-            monthlyTrend[row.monthYear] += (row.value || 0);
+            const metricVal = row.metrics ? (row.metrics[metricKey] || 0) : 0;
+            monthlyTrend[row.monthYear] += metricVal;
         });
         
         return {

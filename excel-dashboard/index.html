@@ -11,7 +11,7 @@
     <!-- Chart.js for Visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=10">
 </head>
 <body>
     <div class="dashboard-container animate-fade-in">
@@ -104,6 +104,32 @@
                     <div class="select-wrapper">
                         <select id="month-select" disabled>
                             <option value="">All Months</option>
+                        </select>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="metric-select">Metric to Visualize</label>
+                    <div class="select-wrapper">
+                        <select id="metric-select" disabled>
+                            <option value="total_units">Total Units (KWH)</option>
+                            <option value="total_value">Total Value (Rs.)</option>
+                            <option value="cmd_kva">CMD (KVA)</option>
+                            <option value="rmd_kva">RMD (KVA)</option>
+                            <option value="eb_units_kvah">EB Units (KVAH)</option>
+                            <option value="wheeling_css_as">Wheeling / CSS / AS</option>
+                            <option value="eb_value_total">EB Value Total (Rs.)</option>
+                            <option value="oa_issued_iex">OA Issued IEX (KWH)</option>
+                            <option value="oa_considered_iex">OA Considered IEX (KWH)</option>
+                            <option value="iex_value">IEX Value (Rs.)</option>
+                            <option value="oa_unit_ltppa">OA Unit - LTPPA (KWH)</option>
+                            <option value="ltppa_value">LTPPA Value (Rs.)</option>
+                            <option value="solar_rooftop">Solar Rooftop (KWH)</option>
+                            <option value="dg_units">DG Units (KWH)</option>
+                            <option value="avg_rate">Avg Rate / KWH (Rs.)</option>
                         </select>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -585,10 +611,10 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/app.js?v=8"></script>
-    <script src="js/excelReader.js?v=8"></script>
-    <script src="js/dataProcessor.js?v=8"></script>
-    <script src="js/charts.js?v=8"></script>
-    <script src="js/dashboard.js?v=8"></script>
+    <script src="js/app.js?v=11"></script>
+    <script src="js/excelReader.js?v=11"></script>
+    <script src="js/dataProcessor.js?v=11"></script>
+    <script src="js/charts.js?v=11"></script>
+    <script src="js/dashboard.js?v=11"></script>
 </body>
 </html>

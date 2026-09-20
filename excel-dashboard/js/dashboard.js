@@ -26,6 +26,7 @@ const Dashboard = {
         this.unitSelect = document.getElementById('unit-select');
         this.monthSelect = document.getElementById('month-select');
         this.yearSelect = document.getElementById('year-select');
+        this.metricSelect = document.getElementById('metric-select');
         this.applyFilterBtn = document.getElementById('apply-filter-btn');
         this.applyFilterText = document.getElementById('apply-filter-text');
         this.resetFilterBtn = document.getElementById('reset-filter-btn');
@@ -110,6 +111,7 @@ const Dashboard = {
         this.unitSelect.addEventListener('change', () => this.onFilterChange());
         this.monthSelect.addEventListener('change', () => this.onFilterChange());
         this.yearSelect.addEventListener('change', () => this.onFilterChange());
+        this.metricSelect.addEventListener('change', () => this.onFilterChange());
         
         this.applyFilterBtn.addEventListener('click', () => this.applyFilter());
         this.resetFilterBtn.addEventListener('click', () => this.resetFilters());
@@ -197,6 +199,7 @@ const Dashboard = {
         this.unitSelect.disabled = false;
         this.monthSelect.disabled = false;
         this.yearSelect.disabled = false;
+        if (this.metricSelect) this.metricSelect.disabled = false;
         this.applyFilterBtn.disabled = false;
         this.resetFilterBtn.disabled = false;
         this.exportBtn.disabled = false;
@@ -372,28 +375,32 @@ const Dashboard = {
         }
     },
     
-    updateDashboardView: function(year, month, unit = "") {
-        // Filter Data
+    updateDashboardView: function(year, month, unit) {
+        // Get selected metric
+        const metricKey = this.metricSelect ? this.metricSelect.value : 'total_units';
+        const metricName = this.metricSelect ? this.metricSelect.options[this.metricSelect.selectedIndex].text : 'Total Units (KWH)';
+        
+        // Get filtered data
         const filteredData = DataProcessor.getFilteredData(year, month, unit);
         
-        // Update KPIs
+        // Update KPIs (total value and units are still calculated, but we could make KPI dynamic too if desired)
         const kpis = DataProcessor.calculateKPIs(filteredData);
         this.updateKPIs(kpis);
         
         // Update Table
-        this.updateTable(filteredData, this.dataTableBody, this.tableEmptyState);
+        this.updateTable(filteredData, this.dataTableBody, this.tableEmptyState, "", metricKey, metricName);
         
-        // Update Charts
-        const chartData = DataProcessor.getChartData(filteredData);
+        // Update Charts with selected metric
+        const chartData = DataProcessor.getChartData(filteredData, metricKey);
         
         if (Object.keys(chartData.monthlyTrend).length > 0) {
-            ChartManager.createMonthlyTrendChart(chartData.monthlyTrend, 'chart-monthly-trend', 'monthlyTrend');
+            ChartManager.createMonthlyTrendChart(chartData.monthlyTrend, 'chart-monthly-trend', 'monthlyTrend', metricName);
         }
         
         const pieCard = document.getElementById('pie-chart-card');
         if (Object.keys(chartData.sourceDist).length > 0 && !AppState.selectedUnit) {
             pieCard.style.display = 'block';
-            ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-category-dist', 'categoryDist');
+            ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-category-dist', 'categoryDist', metricName);
             pieCard.parentElement.style.gridTemplateColumns = '2fr 1fr';
         } else {
             pieCard.style.display = 'none';
@@ -608,8 +615,22 @@ const Dashboard = {
         this.animateValue(this.kpiCategories, 0, kpis.totalUnits, 1000, val => DataProcessor.formatCurrency(val));
     },
     
-    updateTable: function(data, tbodyEl, emptyStateEl, searchTerm = "") {
+    updateTable: function(data, tbodyEl, emptyStateEl, searchTerm = "", metricKey = "total_units", metricName = "Total Units (KWH)") {
         tbodyEl.innerHTML = '';
+        
+        // Update Table Header if it's the main dashboard table
+        if (tbodyEl.id === 'data-table-body') {
+            const table = tbodyEl.parentElement;
+            if (table && table.tagName === 'TABLE') {
+                const thead = table.querySelector('thead tr');
+                if (thead) {
+                    const ths = thead.querySelectorAll('th');
+                    if (ths.length >= 4) {
+                        ths[3].textContent = metricName;
+                    }
+                }
+            }
+        }
         
         let displayData = data;
         
@@ -632,11 +653,13 @@ const Dashboard = {
             displayData.forEach(row => {
                 const tr = document.createElement('tr');
                 
+                const metricVal = row.metrics ? (row.metrics[metricKey] || 0) : (row.units || 0);
+                
                 tr.innerHTML = `
                     <td>${DataProcessor.formatMonthName(row.monthYear)}</td>
                     <td>${row.category}</td>
                     <td>${row.value > 0 ? '₹' + DataProcessor.formatCurrency(row.value) : '-'}</td>
-                    <td>${DataProcessor.formatCurrency(row.units)}</td>
+                    <td>${DataProcessor.formatCurrency(metricVal)}</td>
                 `;
                 
                 tbodyEl.appendChild(tr);

@@ -1,10 +1,21 @@
 :root {
-    /* Modern SaaS Colors */
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --primary-light: #e0e7ff;
+    /* Premium Modern Colors */
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: rgba(99, 102, 241, 0.1);
     --secondary: #64748b;
-    --background: #f8fafc;
+    
+    /* Mesh Background */
+    --bg-mesh: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+               radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+               radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+    --background: #f1f5f9;
+    
+    /* Glassmorphism */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    
     --surface: #ffffff;
     --text-main: #0f172a;
     --text-muted: #64748b;
@@ -12,24 +23,18 @@
     
     /* Semantic Colors */
     --success: #10b981;
-    --success-bg: #d1fae5;
+    --success-bg: rgba(16, 185, 129, 0.1);
     --error: #ef4444;
-    --error-bg: #fee2e2;
+    --error-bg: rgba(239, 68, 68, 0.1);
     --warning: #f59e0b;
-    
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-    --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     
     /* Radius */
     --radius-sm: 8px;
-    --radius: 12px;
-    --radius-lg: 16px;
+    --radius: 16px;
+    --radius-lg: 24px;
     
     /* Transitions */
-    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 * {
@@ -40,7 +45,10 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--background);
+    background-color: #f8fafc;
+    background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+    background-attachment: fixed;
     color: var(--text-main);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -426,11 +434,13 @@ body {
 }
 
 .kpi-card {
-    background: var(--surface);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     padding: 24px;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
+    box-shadow: var(--glass-shadow);
+    border: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
     position: relative;
@@ -439,8 +449,6 @@ body {
 }
 
 .kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
     border-color: var(--border);
 }
 
@@ -508,12 +516,19 @@ body {
 }
 
 .chart-card {
-    background: var(--surface);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     padding: 24px;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    min-width: 0;
+    box-shadow: var(--glass-shadow);
+    border: 1px solid var(--glass-border);
+    min-width: 0; /* Ensures canvas doesn't break grid responsiveness */
+    transition: var(--transition);
+}
+
+.chart-card:hover {
+    box-shadow: 0 15px 30px 0 rgba(31, 38, 135, 0.08);
 }
 
 .chart-card h3 {
@@ -533,10 +548,12 @@ body {
 
 /* Data Table */
 .table-section {
-    background: var(--surface);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
+    box-shadow: var(--glass-shadow);
+    border: 1px solid var(--glass-border);
     margin-bottom: 32px;
     overflow: hidden;
 }
@@ -549,7 +566,7 @@ body {
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
-    background: var(--surface);
+    background: transparent;
 }
 
 .table-header h3 {
@@ -606,7 +623,8 @@ th, td {
 }
 
 th {
-    background-color: var(--surface);
+    background-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(4px);
     font-weight: 600;
     font-size: 12px;
     color: var(--text-muted);
