@@ -743,10 +743,10 @@ const Dashboard = {
         }
         
         if (displayData.length === 0) {
-            emptyStateEl.classList.remove('hidden');
+            if (emptyStateEl) emptyStateEl.classList.remove('hidden');
             tbodyEl.parentElement.style.display = 'none';
         } else {
-            emptyStateEl.classList.add('hidden');
+            if (emptyStateEl) emptyStateEl.classList.add('hidden');
             tbodyEl.parentElement.style.display = 'table';
             
             displayData.forEach(row => {
