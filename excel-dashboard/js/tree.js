@@ -149,6 +149,8 @@ function handleNodeSelection(selectedNode, unitName) {
     updateContentArea(unitName);
 }
 
+let currentChart = null;
+
 function updateContentArea(unitName) {
     const contentArea = document.getElementById('unit-details');
     const contentTitle = document.getElementById('content-title');
@@ -157,7 +159,11 @@ function updateContentArea(unitName) {
     contentArea.style.opacity = '0';
     
     setTimeout(() => {
-        contentTitle.textContent = unitName;
+        if (unitName === 'U-XV') {
+            contentTitle.textContent = 'APL U-15';
+        } else {
+            contentTitle.textContent = unitName;
+        }
         
         if (unitName === 'UNITS') {
             contentBody.innerHTML = `
@@ -176,6 +182,63 @@ function updateContentArea(unitName) {
                     </div>
                 </div>
             `;
+            if (currentChart) { currentChart.destroy(); currentChart = null; }
+        } else if (unitName === 'U-XV') {
+            contentBody.innerHTML = `
+                <div class="analytics-card" style="width: 100%;">
+                    <h3>APL U-15 - Latest 3 Months Data</h3>
+                    <div class="chart-container" style="position: relative; height: 500px; width: 100%; margin-top: 20px;">
+                        <canvas id="uxv-chart"></canvas>
+                    </div>
+                    <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9em;">Remarks: Normal operations, planned maintenance in June.</p>
+                </div>
+            `;
+            
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            const ctx = document.getElementById('uxv-chart').getContext('2d');
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Apr-26', 'May-26', 'Jun-26'],
+                    datasets: [
+                        { label: 'CMD (KVA)', data: [1200, 1250, 1300], backgroundColor: '#4f46e5' },
+                        { label: 'RMD (KVA)', data: [1150, 1200, 1250], backgroundColor: '#818cf8' },
+                        { label: 'EB Units (Kvah)', data: [50000, 52000, 54000], backgroundColor: '#10b981' },
+                        { label: 'OA Issued IEX (Kvah)', data: [20000, 21000, 19000], backgroundColor: '#34d399' },
+                        { label: 'OA Considered IEX (Kvah)', data: [19500, 20500, 18500], backgroundColor: '#059669' },
+                        { label: 'IEX-Value (Rs.)', data: [75000, 78000, 72000], backgroundColor: '#f59e0b' },
+                        { label: 'Wheeling /CSS/AS', data: [5000, 5200, 5100], backgroundColor: '#fbbf24' },
+                        { label: 'FSA/FPPCA/Other Charges', data: [3000, 3100, 3200], backgroundColor: '#d97706' },
+                        { label: 'EB Value Total (Rs.)', data: [180000, 185000, 190000], backgroundColor: '#ef4444' },
+                        { label: 'Solar-Rooftop (Kvah)', data: [5000, 5500, 6000], backgroundColor: '#f87171' },
+                        { label: 'DG Units (Kvah)', data: [1000, 1200, 800], backgroundColor: '#b91c1c' },
+                        { label: 'Total Unts (Kvah)', data: [75000, 78500, 79000], backgroundColor: '#6366f1' },
+                        { label: 'EB & OA units (Kvah)', data: [69500, 72500, 72500], backgroundColor: '#4338ca' },
+                        { label: 'Total value (Rs.)', data: [255000, 263000, 262000], backgroundColor: '#8b5cf6' },
+                        { label: 'OA/ IEX Rate/Kwh', data: [3.8, 3.9, 3.7], backgroundColor: '#a78bfa' },
+                        { label: 'Landed Rate/Kwh with FPPC', data: [5.2, 5.3, 5.1], backgroundColor: '#ec4899' },
+                        { label: 'Landed Rate/Kwh without FPPC', data: [4.9, 5.0, 4.8], backgroundColor: '#f472b6' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: {
+                            type: 'logarithmic', // Used logarithmic scale so rates (4) and values (200000) can co-exist visually
+                            title: { display: true, text: 'Value (Log Scale)' }
+                        }
+                    }
+                }
+            });
+            
         } else {
             const production = Math.floor(Math.random() * 5000) + 8000;
             const efficiency = (Math.random() * 10 + 88).toFixed(1);
@@ -204,6 +267,7 @@ function updateContentArea(unitName) {
                     </div>
                 </div>
             `;
+            if (currentChart) { currentChart.destroy(); currentChart = null; }
         }
         
         contentArea.style.opacity = '1';

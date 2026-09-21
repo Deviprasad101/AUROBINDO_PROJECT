@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Analytics Dashboard</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for Excel Reading -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js for Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css?v=10">
+</head>
+<body>
+    <div class="dashboard-container animate-fade-in">
+        
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="header-title-group">
+                <div class="header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1>Excel Analytics Dashboard</h1>
+                    <p class="subtitle">Monthly Performance Analysis</p>
+                </div>
+            </div>
+            <div class="header-actions" style="display: flex; gap: 12px;">
+                <button onclick="window.location.href='index.html'" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
+                    </svg>
+                    Tree View
+                </button>
+                <button id="export-btn" class="btn btn-outline" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Export Data
+                </button>
+            </div>
+        </header>
+
+        <!-- FILE UPLOAD SECTION -->
+        <section class="upload-section animate-slide-up delay-1">
+            <div class="upload-card" id="drop-zone">
+                <div class="upload-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                </div>
+                <h3>Upload Excel File</h3>
+                <p class="file-desc">Drag & drop your Excel files here or click to browse<br>Supported formats: .xlsx, .xls</p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="file1-input" accept=".xlsx, .xls" multiple>
+                    <label for="file1-input" class="btn btn-primary">Choose File</label>
+                    <span id="file1-name" class="file-name" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        <span id="file-name-text">No file chosen</span>
+                    </span>
+                </div>
+                <div id="file1-status" class="upload-status"></div>
+            </div>
+        </section>
+
+        <!-- TAB NAVIGATION (Hidden until files loaded) -->
+        <div id="tab-navigation" class="tab-navigation hidden animate-slide-up">
+            <button class="tab-btn active" data-target="dashboard-content">General Analytics</button>
+                <button class="tab-btn" data-target="power-dashboard-content">UnitVII and HT power consumption</button>
+            <button class="tab-btn" data-target="ht-dashboard-content">HT Power Analysis</button>
+        </div>
+
+        <!-- DASHBOARD CONTENT (Tab 1) -->
+        <div id="dashboard-content" class="dashboard-content tab-pane active hidden animate-fade-in">
+            
+            <!-- FILTER SECTION -->
+            <section class="filter-section animate-slide-up">
+                <div class="filter-group">
+                    <label for="unit-select">Unit (Tab)</label>
+                    <div class="custom-multi-select" id="unit-multi-select" data-disabled="true">
+                        <div class="select-selected">
+                            <span class="selected-text">All Units</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                        <div class="select-items hidden" id="unit-options-container">
+                            <label class="checkbox-container"><input type="checkbox" value="all" checked> All Units<span class="checkmark"></span></label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="year-select">Year</label>
+                    <div class="custom-multi-select" id="year-multi-select" data-disabled="true">
+                        <div class="select-selected">
+                            <span class="selected-text">All Years</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                        <div class="select-items hidden" id="year-options-container">
+                            <label class="checkbox-container"><input type="checkbox" value="all" checked> All Years<span class="checkmark"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="month-select">Month</label>
+                    <div class="custom-multi-select" id="month-multi-select" data-disabled="true">
+                        <div class="select-selected">
+                            <span class="selected-text">All Months</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                        <div class="select-items hidden" id="month-options-container">
+                            <label class="checkbox-container"><input type="checkbox" value="all" checked> All Months<span class="checkmark"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="metric-select">Metric to Visualize</label>
+                    <div class="custom-multi-select" id="metric-multi-select" data-disabled="true">
+                        <div class="select-selected">
+                            <span class="selected-text">Total Units (KWH)</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                        <div class="select-items hidden" id="metric-options-container">
+                            <label class="checkbox-container"><input type="checkbox" value="all" data-name="All Metrics"> All Metrics<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="total_units" checked data-name="Total Units (KWH)"> Total Units (KWH)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="total_value" data-name="Total Value (Rs.)"> Total Value (Rs.)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="cmd_kva" data-name="CMD (KVA)"> CMD (KVA)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="rmd_kva" data-name="RMD (KVA)"> RMD (KVA)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="eb_units_kvah" data-name="EB Units (KVAH)"> EB Units (KVAH)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="wheeling_css_as" data-name="Wheeling / CSS / AS"> Wheeling / CSS / AS<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="eb_value_total" data-name="EB Value Total (Rs.)"> EB Value Total (Rs.)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="oa_issued_iex" data-name="OA Issued IEX (KWH)"> OA Issued IEX (KWH)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="oa_considered_iex" data-name="OA Considered IEX (KWH)"> OA Considered IEX (KWH)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="iex_value" data-name="IEX Value (Rs.)"> IEX Value (Rs.)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="oa_unit_ltppa" data-name="OA Unit - LTPPA (KWH)"> OA Unit - LTPPA (KWH)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="ltppa_value" data-name="LTPPA Value (Rs.)"> LTPPA Value (Rs.)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="solar_rooftop" data-name="Solar Rooftop (KWH)"> Solar Rooftop (KWH)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="dg_units" data-name="DG Units (KWH)"> DG Units (KWH)<span class="checkmark"></span></label>
+                            <label class="checkbox-container"><input type="checkbox" value="avg_rate" data-name="Avg Rate / KWH (Rs.)"> Avg Rate / KWH (Rs.)<span class="checkmark"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button id="reset-filter-btn" class="btn btn-secondary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                        Reset
+                    </button>
+                    <button id="apply-filter-btn" class="btn btn-primary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                        </svg>
+                        <span id="apply-filter-text">Apply Filter</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- KPI CARDS -->
+            <section class="kpi-section">
+                <div class="kpi-card animate-slide-up delay-1">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Total Records</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 011.875 1.875v11.25a1.875 1.875 0 01-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V6.375A1.875 1.875 0 015.625 4.5z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-total-records" data-val="0">0</div>
+                </div>
+                <div class="kpi-card animate-slide-up delay-2">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Total Value (Rs.)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 8.25H9m6 3H9m3 6l-3-3h1.5a3 3 0 100-6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-total-value" data-val="0">₹0</div>
+                </div>
+                <div class="kpi-card animate-slide-up delay-3">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Average Value (Rs.)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-avg-value" data-val="0">₹0</div>
+                </div>
+                <div class="kpi-card animate-slide-up delay-3">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Total Units (KWH)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-categories" data-val="0">0</div>
+                </div>
+            </section>
+
+            <!-- CHARTS SECTION -->
+            <section class="charts-section animate-slide-up delay-2">
+                <div class="chart-card full-width">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                        </svg>
+                        Monthly Trend (Values)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="chart-monthly-trend"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Category/Unit Dist now hidden logically if single unit, handled in JS -->
+                <div class="chart-card" id="pie-chart-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+                        </svg>
+                        Category Distribution (KWH)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="chart-category-dist"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DATA TABLE -->
+            <section class="table-section animate-slide-up delay-3">
+                <div class="table-header">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary); display: inline-block; vertical-align: bottom; margin-right: 6px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                        </svg>
+                        Detailed Records
+                    </h3>
+                    <div class="table-controls">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                        <input type="text" id="table-search" placeholder="Search records...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date/Month</th>
+                                <th>Category / Unit</th>
+                                <th>Value (Rs.)</th>
+                                <th>Units (KWH)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body">
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- POWER CONSUMPTION ANALYSIS CONTENT (Tab 2) -->
+        <div id="power-dashboard-content" class="dashboard-content tab-pane hidden animate-fade-in">
+            
+            <!-- FILTER SECTION -->
+            <section class="filter-section animate-slide-up">
+                <div class="filter-group">
+                    <label for="power-year-select">Year</label>
+                    <div class="custom-multi-select" id="power-year-multi-select" data-disabled="true">
+                        <div class="select-selected">
+                            <span class="selected-text">All Years</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                        <div class="select-items hidden" id="power-year-options-container">
+                            <label class="checkbox-container"><input type="checkbox" value="all" checked> All Years<span class="checkmark"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="power-month-select">Month</label>
+                    <div class="custom-multi-select" id="power-month-multi-select" data-disabled="true">
+                        <div class="select-selected">
+                            <span class="selected-text">All Months</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                        <div class="select-items hidden" id="power-month-options-container">
+                            <label class="checkbox-container"><input type="checkbox" value="all" checked> All Months<span class="checkmark"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button id="power-reset-filter-btn" class="btn btn-secondary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                        Reset
+                    </button>
+                    <button id="power-apply-filter-btn" class="btn btn-primary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                        </svg>
+                        <span id="power-apply-filter-text">Apply Filter</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- KPI CARDS -->
+            <section class="kpi-section">
+                <div class="kpi-card animate-slide-up delay-1">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Total Records</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 011.875 1.875v11.25a1.875 1.875 0 01-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V6.375A1.875 1.875 0 015.625 4.5z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-power-total-records" data-val="0">0</div>
+                </div>
+                <div class="kpi-card animate-slide-up delay-2">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Total Value (Rs.)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 8.25H9m6 3H9m3 6l-3-3h1.5a3 3 0 100-6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-power-total-value" data-val="0">₹0</div>
+                </div>
+                <div class="kpi-card animate-slide-up delay-3">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Average Value (Rs.)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-power-avg-value" data-val="0">₹0</div>
+                </div>
+                <div class="kpi-card animate-slide-up delay-3">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Total Units (KWH)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-power-categories" data-val="0">0</div>
+                </div>
+            </section>
+
+            <!-- CHARTS SECTION -->
+            <section class="charts-section animate-slide-up delay-2">
+                <div class="chart-card full-width">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                        </svg>
+                        Merged Monthly Trend (Values)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="chart-power-monthly-trend"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card" id="power-pie-chart-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+                        </svg>
+                        Merged Category Distribution (KWH)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="chart-power-category-dist"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DATA TABLE -->
+            <section class="table-section animate-slide-up delay-3">
+                <div class="table-header">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary); display: inline-block; vertical-align: bottom; margin-right: 6px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                        </svg>
+                        Filtered Power Records
+                    </h3>
+                    <div class="table-controls">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                        <input type="text" id="power-table-search" placeholder="Search records...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="power-data-table">
+                        <thead>
+                            <tr>
+                                <th>Date/Month</th>
+                                <th>Source / Unit</th>
+                                <th>Category</th>
+                                <th>Value (Rs.)</th>
+                                <th>Units (KWH)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="power-data-table-body">
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="power-table-empty-state" class="empty-state hidden">
+                    <div class="empty-state-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                    </div>
+                    <h4>No records found</h4>
+                    <p>Try adjusting your selected filters or search query.</p>
+                </div>
+            </section>
+        </div>
+        
+        <!-- HT POWER ANALYSIS CONTENT (Tab 3) -->
+        <div id="ht-dashboard-content" class="dashboard-content tab-pane hidden animate-fade-in">
+            
+            <!-- FILTER SECTION -->
+            <section class="filter-section animate-slide-up">
+                <div class="filter-group">
+                    <label for="ht-year-select">Year</label>
+                    <div class="custom-multi-select" id="ht-year-multi-select" data-disabled="true">
+                        <div class="select-selected">
+                            <span class="selected-text">All Years</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                        <div class="select-items hidden" id="ht-year-options-container">
+                            <label class="checkbox-container"><input type="checkbox" value="all" checked> All Years<span class="checkmark"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="ht-month-select">Month</label>
+                    <div class="custom-multi-select" id="ht-month-multi-select" data-disabled="true">
+                        <div class="select-selected">
+                            <span class="selected-text">All Months</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                        <div class="select-items hidden" id="ht-month-options-container">
+                            <label class="checkbox-container"><input type="checkbox" value="all" checked> All Months<span class="checkmark"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button id="ht-reset-filter-btn" class="btn btn-secondary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                        Reset
+                    </button>
+                    <button id="ht-apply-filter-btn" class="btn btn-primary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                        </svg>
+                        <span id="ht-apply-filter-text">Apply Filter</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- KPI CARDS -->
+            <section class="kpi-section">
+                <div class="kpi-card animate-slide-up delay-1">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Total Records</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 011.875 1.875v11.25a1.875 1.875 0 01-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V6.375A1.875 1.875 0 015.625 4.5z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-ht-total-records" data-val="0">0</div>
+                </div>
+                
+                <div class="kpi-card animate-slide-up delay-2">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Average Units (KWH)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-ht-avg-units" data-val="0">0</div>
+                </div>
+                
+                <div class="kpi-card animate-slide-up delay-3">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Max Units (KWH)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-ht-max-units" data-val="0">0</div>
+                </div>
+
+                <div class="kpi-card animate-slide-up delay-4">
+                    <div class="kpi-header">
+                        <div class="kpi-title">Total Units (KWH)</div>
+                        <div class="kpi-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-ht-total-units" data-val="0">0</div>
+                </div>
+            </section>
+
+            <!-- CHARTS SECTION -->
+            <section class="charts-section animate-slide-up delay-2">
+                <div class="chart-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                        </svg>
+                        HT Monthly Trend (KWH)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="chart-ht-monthly-trend"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card" id="ht-pie-chart-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+                        </svg>
+                        HT Category Distribution (KWH)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="chart-ht-category-dist"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DATA TABLE -->
+            <section class="table-section animate-slide-up delay-3">
+                <div class="table-header">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary); display: inline-block; vertical-align: bottom; margin-right: 6px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                        </svg>
+                        HT Power Records
+                    </h3>
+                    <div class="table-controls">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                        <input type="text" id="ht-table-search" placeholder="Search records...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="ht-data-table">
+                        <thead>
+                            <tr>
+                                <th>Date/Month</th>
+                                <th>Source / Unit</th>
+                                <th>Category</th>
+                                <th>Units (KWH)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ht-data-table-body">
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="ht-table-empty-state" class="empty-state hidden">
+                    <div class="empty-state-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                    </div>
+                    <h4>No records found</h4>
+                    <p>Try adjusting your selected filters or search query.</p>
+                </div>
+            </section>
+        </div>
+
+        <footer class="dashboard-footer">
+            <p>Excel Analytics Dashboard &copy; 2026 - Client-Side Processing Only</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js?v=11"></script>
+    <script src="js/excelReader.js?v=11"></script>
+    <script src="js/dataProcessor.js?v=11"></script>
+    <script src="js/charts.js?v=11"></script>
+    <script src="js/dashboard.js?v=11"></script>
+</body>
+</html>
