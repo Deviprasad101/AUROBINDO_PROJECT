@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Analytics Dashboard - Tree View</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/tree.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <i class="fa-solid fa-chart-line"></i>
+            <h1>Excel Analytics Dashboard</h1>
+        </div>
+        <button onclick="window.location.href='index.html'" class="home-btn" aria-label="Home Page">
+            <i class="fa-solid fa-house"></i> Home Page
+        </button>
+    </header>
+
+    <main class="dashboard-container">
+        <aside class="sidebar">
+            <div id="tree-container" class="tree-container" role="tree" aria-label="Units Hierarchy">
+                <!-- Tree will be dynamically generated here by tree.js -->
+            </div>
+        </aside>
+        
+        <section class="content-area">
+            <div id="unit-details" class="unit-details">
+                <h2 id="content-title">Select a Unit</h2>
+                <div id="content-body" class="content-body">
+                    <p class="placeholder-text">Please select a unit from the tree on the left to view its analytics.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Application Script -->
+    <script src="js/tree.js"></script>
+</body>
+</html>
