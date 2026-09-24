@@ -99,21 +99,71 @@ const ChartManager = {
         const firstMonth = labels[0];
         const keys = firstMonth ? Object.keys(trendData[firstMonth]) : [];
         
-        const datasets = keys.map((key, index) => {
+        const datasets = [];
+        
+        keys.forEach((key, index) => {
             const data = labels.map(l => trendData[l][key]);
             const labelName = datasetLabels[index] || datasetLabels[0];
             const theme = gradients[index % gradients.length];
             
-            return {
+            const baseData = [];
+            const incData = [];
+            const decData = [];
+            
+            for (let i = 0; i < data.length; i++) {
+                const val = data[i] || 0;
+                const prev = i === 0 ? val : (data[i - 1] || 0);
+                
+                const baseVal = Math.min(val, prev);
+                const incVal = val > prev ? val - prev : 0;
+                const decVal = val < prev ? prev - val : 0;
+                
+                baseData.push(baseVal);
+                incData.push(incVal);
+                decData.push(decVal);
+            }
+            
+            const baseBg = keys.length === 1 ? 'rgba(79, 70, 229, 0.9)' : theme.bg;
+            const baseHover = keys.length === 1 ? '#4f46e5' : theme.hover;
+            
+            datasets.push({
                 label: labelName,
-                data: data,
-                backgroundColor: theme.bg,
-                hoverBackgroundColor: theme.hover,
-                borderRadius: 6,
+                data: baseData,
+                backgroundColor: baseBg,
+                hoverBackgroundColor: baseHover,
+                stack: 'stack_' + index,
+                borderRadius: 0,
                 borderWidth: 0,
                 barPercentage: 0.6,
-                categoryPercentage: 0.8
-            };
+                categoryPercentage: 0.8,
+                actualData: data
+            });
+            
+            datasets.push({
+                label: labelName + ' (Increase)',
+                data: incData,
+                backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                hoverBackgroundColor: '#10b981',
+                stack: 'stack_' + index,
+                borderRadius: 0,
+                borderWidth: 0,
+                barPercentage: 0.6,
+                categoryPercentage: 0.8,
+                actualData: data
+            });
+            
+            datasets.push({
+                label: labelName + ' (Decrease)',
+                data: decData,
+                backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                hoverBackgroundColor: '#ef4444',
+                stack: 'stack_' + index,
+                borderRadius: 0,
+                borderWidth: 0,
+                barPercentage: 0.6,
+                categoryPercentage: 0.8,
+                actualData: data
+            });
         });
         
         AppState.charts[chartKey] = new Chart(ctx, {
@@ -127,22 +177,37 @@ const ChartManager = {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        display: keys.length > 1,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            font: { size: 12, weight: '500', family: "'Inter', sans-serif" }
+                        }
                     },
                     tooltip: {
                         titleFont: { size: 14, weight: '600' },
                         bodyFont: { size: 14, weight: '500' },
                         callbacks: {
                             label: function(context) {
+                                // Find actual data for this bar
+                                const actualVal = context.dataset.actualData[context.dataIndex];
                                 const isRs = context.dataset.label.includes('Rs.');
-                                const prefix = isRs && context.raw > 0 ? '₹' : '';
-                                return `${context.dataset.label}: ${prefix}${DataProcessor.formatCurrency(context.raw)}`;
+                                const prefix = isRs && actualVal > 0 ? '₹' : '';
+                                
+                                // Return formatted tooltip
+                                let title = context.dataset.label;
+                                // If it's a difference part, show both difference and total
+                                if (title.includes('Increase') || title.includes('Decrease')) {
+                                    return `${title}: ${prefix}${DataProcessor.formatCurrency(context.raw)} (Total: ${prefix}${DataProcessor.formatCurrency(actualVal)})`;
+                                }
+                                return `${title}: ${prefix}${DataProcessor.formatCurrency(actualVal)}`;
                             }
                         }
                     }
                 },
                 scales: {
                     y: {
+                        stacked: true,
                         beginAtZero: true,
                         grid: {
                             color: this.colors.grid,
@@ -168,6 +233,7 @@ const ChartManager = {
                         }
                     },
                     x: {
+                        stacked: true,
                         grid: {
                             display: false,
                             drawBorder: false
@@ -230,11 +296,14 @@ const ChartManager = {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                let value = context.raw || 0;
+                                let title = context.label || '';
+                                
+                                // Default prefix to rupees if dataset label indicates it
                                 const isRs = datasetLabel.includes('Rs.');
-                                const prefix = isRs ? '₹' : '';
-                                return ` ${context.label}: ${prefix}${DataProcessor.formatCurrency(context.raw)} (${percentage}%)`;
+                                const prefix = isRs && value > 0 ? '₹' : '';
+                                
+                                return `${title}: ${prefix}${DataProcessor.formatCurrency(value)}`;
                             }
                         }
                     }

@@ -26,6 +26,7 @@ const Dashboard = {
         this.monthSelect = document.getElementById('month-multi-select');
         this.yearSelect = document.getElementById('year-multi-select');
         this.metricSelect = document.getElementById('metric-multi-select');
+        this.trendSelect = document.getElementById('trend-multi-select');
         this.applyFilterBtn = document.getElementById('apply-filter-btn');
         this.applyFilterText = document.getElementById('apply-filter-text');
         this.resetFilterBtn = document.getElementById('reset-filter-btn');
@@ -36,6 +37,7 @@ const Dashboard = {
         this.htMonthSelect = document.getElementById('ht-month-multi-select');
         this.htYearSelect = document.getElementById('ht-year-multi-select');
         this.htMetricSelect = document.getElementById('ht-metric-multi-select');
+        this.htTrendSelect = document.getElementById('ht-trend-multi-select');
         this.htApplyFilterBtn = document.getElementById('ht-apply-filter-btn');
         this.htApplyFilterText = document.getElementById('ht-apply-filter-text');
         this.htResetFilterBtn = document.getElementById('ht-reset-filter-btn');
@@ -292,6 +294,7 @@ const Dashboard = {
         this.monthSelect.dataset.disabled = "false";
         this.yearSelect.dataset.disabled = "false";
         if (this.metricSelect) this.metricSelect.dataset.disabled = "false";
+        if (this.trendSelect) this.trendSelect.dataset.disabled = "false";
         this.applyFilterBtn.disabled = false;
         this.resetFilterBtn.disabled = false;
         this.exportBtn.disabled = false;
@@ -300,6 +303,7 @@ const Dashboard = {
         this.htMonthSelect.dataset.disabled = "false";
         this.htYearSelect.dataset.disabled = "false";
         if (this.htMetricSelect) this.htMetricSelect.dataset.disabled = "false";
+        if (this.htTrendSelect) this.htTrendSelect.dataset.disabled = "false";
         this.htApplyFilterBtn.disabled = false;
         this.htResetFilterBtn.disabled = false;
         
@@ -318,15 +322,19 @@ const Dashboard = {
             AppState.selectedYear = [];
             AppState.selectedMonthOnly = [];
             AppState.selectedUnit = [];
+            AppState.selectedTrend = [];
             
             AppState.htSelectedYear = [];
             AppState.htSelectedMonthOnly = [];
+            AppState.htSelectedTrend = [];
             
             // Set dropdowns
             this.setMultiSelectValues(this.yearSelect, []);
             this.setMultiSelectValues(this.monthSelect, []);
             this.setMultiSelectValues(this.unitSelect, []);
             if (this.metricSelect) this.setMultiSelectValues(this.metricSelect, []);
+            if (this.trendSelect) this.setMultiSelectValues(this.trendSelect, ['all']);
+            if (this.trendSelect) this.setMultiSelectValues(this.trendSelect, ['all']);
             
             this.setMultiSelectValues(this.htYearSelect, []);
             this.setMultiSelectValues(this.htMonthSelect, []);
@@ -397,10 +405,12 @@ const Dashboard = {
         const years = this.getMultiSelectValues(this.yearSelect);
         const months = this.getMultiSelectValues(this.monthSelect);
         const units = this.getMultiSelectValues(this.unitSelect);
+        const trends = this.getMultiSelectValues(this.trendSelect);
         
         AppState.selectedYear = years;
         AppState.selectedMonthOnly = months;
         AppState.selectedUnit = units;
+        AppState.selectedTrend = trends;
         
         // Visual loading state
         const originalText = this.applyFilterText.textContent;
@@ -408,7 +418,7 @@ const Dashboard = {
         this.applyFilterBtn.disabled = true;
         
         setTimeout(() => {
-            this.updateDashboardView(years, months, units);
+            this.updateDashboardView(years, months, units, trends);
             this.applyFilterText.textContent = originalText;
             this.applyFilterBtn.disabled = false;
         }, 150); // Give UI time to update
@@ -419,18 +429,21 @@ const Dashboard = {
             AppState.selectedYear = [];
             AppState.selectedMonthOnly = [];
             AppState.selectedUnit = [];
+            AppState.selectedTrend = [];
             
             this.setMultiSelectValues(this.yearSelect, []);
             this.setMultiSelectValues(this.monthSelect, []);
             this.setMultiSelectValues(this.unitSelect, []);
             if (this.metricSelect) this.setMultiSelectValues(this.metricSelect, []);
+            if (this.trendSelect) this.setMultiSelectValues(this.trendSelect, ['all']);
+            if (this.trendSelect) this.setMultiSelectValues(this.trendSelect, ['all']);
             
             this.updateDashboardView([], [], []);
             this.tableSearch.value = "";
         }
     },
     
-    updateDashboardView: function(years, months, units) {
+    updateDashboardView: function(years, months, units, trends = ['all']) {
         // Get selected metrics
         let metricKeys = this.getMultiSelectValues(this.metricSelect);
         let metricNames = this.getMultiSelectNames(this.metricSelect);
@@ -512,11 +525,13 @@ const Dashboard = {
     applyHtFilter: function() {
         const years = this.getMultiSelectValues(this.htYearSelect);
         const months = this.getMultiSelectValues(this.htMonthSelect);
+        const trends = this.getMultiSelectValues(this.htTrendSelect);
         const metricKeys = this.getMultiSelectValues(this.htMetricSelect);
         const metricNames = this.getMultiSelectNames(this.htMetricSelect);
         
         AppState.htSelectedYear = years;
         AppState.htSelectedMonthOnly = months;
+        AppState.htSelectedTrend = trends;
         AppState.htMetricKeys = metricKeys;
         AppState.htMetricNames = metricNames;
         
@@ -535,10 +550,13 @@ const Dashboard = {
         if (AppState.availableMonths.length > 0) {
             AppState.htSelectedYear = [];
             AppState.htSelectedMonthOnly = [];
+            AppState.htSelectedTrend = [];
             
             this.setMultiSelectValues(this.htYearSelect, []);
             this.setMultiSelectValues(this.htMonthSelect, []);
             if (this.htMetricSelect) this.setMultiSelectValues(this.htMetricSelect, []);
+            if (this.htTrendSelect) this.setMultiSelectValues(this.htTrendSelect, ['all']);
+            if (this.htTrendSelect) this.setMultiSelectValues(this.htTrendSelect, ['all']);
             
             this.updateHTDashboardView([], []);
             this.htTableSearch.value = "";
