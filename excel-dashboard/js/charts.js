@@ -57,198 +57,222 @@ const ChartManager = {
         }
     },
     
-    createMonthlyTrendChart: function(trendData, canvasId = 'chart-monthly-trend', chartKey = 'monthlyTrend', datasetLabels = ['Total Value (Rs.)']) {
-        if (AppState.charts[chartKey]) {
-            AppState.charts[chartKey].destroy();
-        }
+    createMonthlyTrendChart: function(trendData, wrapperId = 'wrapper-monthly-trend-units', chartKeyBase = 'monthlyTrend', datasetLabels = ['Total Value (Rs.)']) {
+        const wrapper = document.getElementById(wrapperId);
+        if (!wrapper) return;
+        wrapper.innerHTML = '';
         
-        const ctx = document.getElementById(canvasId).getContext('2d');
         const labels = Object.keys(trendData).sort();
+        if (labels.length === 0) return;
         
-        const formattedLabels = labels.map(l => DataProcessor.formatMonthName(l).split(' ')[0] + ' ' + l.split('-')[0].slice(2));
+        // Find unique years
+        const years = [...new Set(labels.map(l => l.split('-')[0]))];
         
-        // Define an array of premium gradients for multiple datasets
-        const gradients = [];
-        
-        // Primary: Deep Indigo
-        const grad1 = ctx.createLinearGradient(0, 0, 0, 320);
-        grad1.addColorStop(0, 'rgba(79, 70, 229, 0.95)');
-        grad1.addColorStop(1, 'rgba(79, 70, 229, 0.1)');
-        gradients.push({ bg: grad1, hover: this.colors.primary });
-        
-        // Secondary: Emerald Green
-        const grad2 = ctx.createLinearGradient(0, 0, 0, 320);
-        grad2.addColorStop(0, 'rgba(16, 185, 129, 0.95)');
-        grad2.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
-        gradients.push({ bg: grad2, hover: this.colors.success });
-        
-        // Tertiary: Sky Blue
-        const grad3 = ctx.createLinearGradient(0, 0, 0, 320);
-        grad3.addColorStop(0, 'rgba(14, 165, 233, 0.95)');
-        grad3.addColorStop(1, 'rgba(14, 165, 233, 0.1)');
-        gradients.push({ bg: grad3, hover: this.colors.secondary });
-        
-        // Quaternary: Amber
-        const grad4 = ctx.createLinearGradient(0, 0, 0, 320);
-        grad4.addColorStop(0, 'rgba(245, 158, 11, 0.95)');
-        grad4.addColorStop(1, 'rgba(245, 158, 11, 0.1)');
-        gradients.push({ bg: grad4, hover: this.colors.warning });
-        
-        // Build datasets array dynamically based on keys inside trendData
-        // Since trendData[month] = { key1: val1, key2: val2 }, we extract keys from the first month
-        const firstMonth = labels[0];
-        const keys = firstMonth ? Object.keys(trendData[firstMonth]) : [];
-        
-        const datasets = [];
-        
-        keys.forEach((key, index) => {
-            const data = labels.map(l => trendData[l][key]);
-            const labelName = datasetLabels[index] || datasetLabels[0];
-            const theme = gradients[index % gradients.length];
+        years.forEach(year => {
+            const yearLabels = labels.filter(l => l.startsWith(year));
+            const chartKey = chartKeyBase + '_' + year;
             
-            const baseData = [];
-            const incData = [];
-            const decData = [];
-            
-            for (let i = 0; i < data.length; i++) {
-                const val = data[i] || 0;
-                const prev = i === 0 ? val : (data[i - 1] || 0);
-                
-                const baseVal = Math.min(val, prev);
-                const incVal = val > prev ? val - prev : 0;
-                const decVal = val < prev ? prev - val : 0;
-                
-                baseData.push(baseVal);
-                incData.push(incVal);
-                decData.push(decVal);
+            if (AppState.charts[chartKey]) {
+                AppState.charts[chartKey].destroy();
             }
             
-            const baseBg = keys.length === 1 ? 'rgba(79, 70, 229, 0.9)' : theme.bg;
-            const baseHover = keys.length === 1 ? '#4f46e5' : theme.hover;
+            // Create container for this year
+            const yearContainer = document.createElement('div');
+            yearContainer.className = 'chart-container';
+            yearContainer.style.marginBottom = '2rem';
+            yearContainer.style.height = '350px';
             
-            datasets.push({
-                label: labelName,
-                data: baseData,
-                backgroundColor: baseBg,
-                hoverBackgroundColor: baseHover,
-                stack: 'stack_' + index,
-                borderRadius: 0,
-                borderWidth: 0,
-                barPercentage: 0.6,
-                categoryPercentage: 0.8,
-                actualData: data
+            const title = document.createElement('h4');
+            title.innerText = 'Year: ' + year;
+            title.style.textAlign = 'center';
+            title.style.marginBottom = '10px';
+            title.style.color = 'var(--text-main)';
+            title.style.fontWeight = '600';
+            
+            const canvas = document.createElement('canvas');
+            canvas.id = 'canvas_' + chartKey;
+            
+            yearContainer.appendChild(title);
+            yearContainer.appendChild(canvas);
+            wrapper.appendChild(yearContainer);
+            
+            const ctx = canvas.getContext('2d');
+            const formattedLabels = yearLabels.map(l => DataProcessor.formatMonthName(l).split(' ')[0] + ' ' + l.split('-')[0].slice(2));
+            
+            const gradients = [];
+            const grad1 = ctx.createLinearGradient(0, 0, 0, 320);
+            grad1.addColorStop(0, 'rgba(79, 70, 229, 0.95)');
+            grad1.addColorStop(1, 'rgba(79, 70, 229, 0.1)');
+            gradients.push({ bg: grad1, hover: this.colors.primary });
+            
+            const grad2 = ctx.createLinearGradient(0, 0, 0, 320);
+            grad2.addColorStop(0, 'rgba(16, 185, 129, 0.95)');
+            grad2.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
+            gradients.push({ bg: grad2, hover: this.colors.success });
+            
+            const grad3 = ctx.createLinearGradient(0, 0, 0, 320);
+            grad3.addColorStop(0, 'rgba(14, 165, 233, 0.95)');
+            grad3.addColorStop(1, 'rgba(14, 165, 233, 0.1)');
+            gradients.push({ bg: grad3, hover: this.colors.secondary });
+            
+            const grad4 = ctx.createLinearGradient(0, 0, 0, 320);
+            grad4.addColorStop(0, 'rgba(245, 158, 11, 0.95)');
+            grad4.addColorStop(1, 'rgba(245, 158, 11, 0.1)');
+            gradients.push({ bg: grad4, hover: this.colors.warning });
+            
+            const firstMonth = labels[0];
+            const keys = firstMonth ? Object.keys(trendData[firstMonth]) : [];
+            const datasets = [];
+            
+            keys.forEach((key, index) => {
+                const labelName = datasetLabels[index] || datasetLabels[0];
+                const theme = gradients[index % gradients.length];
+                
+                const baseData = [];
+                const incData = [];
+                const decData = [];
+                const actualData = [];
+                
+                yearLabels.forEach(l => {
+                    const lIndex = labels.indexOf(l);
+                    const val = trendData[l][key] || 0;
+                    const prev = lIndex === 0 ? val : (trendData[labels[lIndex - 1]][key] || 0);
+                    
+                    const baseVal = Math.min(val, prev);
+                    const incVal = val > prev ? val - prev : 0;
+                    const decVal = val < prev ? prev - val : 0;
+                    
+                    baseData.push(baseVal === 0 ? null : baseVal);
+                    incData.push(incVal === 0 ? null : incVal);
+                    decData.push(decVal === 0 ? null : decVal);
+                    actualData.push(val);
+                });
+                
+                const baseBg = keys.length === 1 ? 'rgba(79, 70, 229, 0.9)' : theme.bg;
+                const baseHover = keys.length === 1 ? '#4f46e5' : theme.hover;
+                
+                datasets.push({
+                    label: labelName,
+                    data: baseData,
+                    backgroundColor: baseBg,
+                    hoverBackgroundColor: baseHover,
+                    stack: 'stack_' + index,
+                    borderRadius: 0,
+                    borderWidth: 0,
+                    barPercentage: 0.6,
+                    minBarLength: 5,
+                    categoryPercentage: 0.8,
+                    actualData: actualData
+                });
+                
+                datasets.push({
+                    label: labelName + ' (Increase)',
+                    data: incData,
+                    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                    hoverBackgroundColor: '#10b981',
+                    stack: 'stack_' + index,
+                    borderRadius: 0,
+                    borderWidth: 0,
+                    barPercentage: 0.6,
+                    minBarLength: 5,
+                    categoryPercentage: 0.8,
+                    actualData: actualData
+                });
+                
+                datasets.push({
+                    label: labelName + ' (Decrease)',
+                    data: decData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                    hoverBackgroundColor: '#ef4444',
+                    stack: 'stack_' + index,
+                    borderRadius: 0,
+                    borderWidth: 0,
+                    barPercentage: 0.6,
+                    minBarLength: 5,
+                    categoryPercentage: 0.8,
+                    actualData: actualData
+                });
             });
             
-            datasets.push({
-                label: labelName + ' (Increase)',
-                data: incData,
-                backgroundColor: 'rgba(16, 185, 129, 0.9)',
-                hoverBackgroundColor: '#10b981',
-                stack: 'stack_' + index,
-                borderRadius: 0,
-                borderWidth: 0,
-                barPercentage: 0.6,
-                categoryPercentage: 0.8,
-                actualData: data
-            });
-            
-            datasets.push({
-                label: labelName + ' (Decrease)',
-                data: decData,
-                backgroundColor: 'rgba(239, 68, 68, 0.9)',
-                hoverBackgroundColor: '#ef4444',
-                stack: 'stack_' + index,
-                borderRadius: 0,
-                borderWidth: 0,
-                barPercentage: 0.6,
-                categoryPercentage: 0.8,
-                actualData: data
-            });
-        });
-        
-        AppState.charts[chartKey] = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: formattedLabels,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: keys.length > 1,
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            font: { size: 12, weight: '500', family: "'Inter', sans-serif" }
-                        }
-                    },
-                    tooltip: {
-                        titleFont: { size: 14, weight: '600' },
-                        bodyFont: { size: 14, weight: '500' },
-                        callbacks: {
-                            label: function(context) {
-                                // Find actual data for this bar
-                                const actualVal = context.dataset.actualData[context.dataIndex];
-                                const isRs = context.dataset.label.includes('Rs.');
-                                const prefix = isRs && actualVal > 0 ? '₹' : '';
-                                
-                                // Return formatted tooltip
-                                let title = context.dataset.label;
-                                // If it's a difference part, show both difference and total
-                                if (title.includes('Increase') || title.includes('Decrease')) {
-                                    return `${title}: ${prefix}${DataProcessor.formatCurrency(context.raw)} (Total: ${prefix}${DataProcessor.formatCurrency(actualVal)})`;
+            AppState.charts[chartKey] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: formattedLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: keys.length > 1,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                font: { size: 12, weight: '500', family: "'Inter', sans-serif" },
+                                filter: function(item, chart) {
+                                    return !item.text.includes('(Increase)') && !item.text.includes('(Decrease)');
                                 }
-                                return `${title}: ${prefix}${DataProcessor.formatCurrency(actualVal)}`;
                             }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        grid: {
-                            color: this.colors.grid,
-                            drawBorder: false,
-                            borderDash: [4, 4]
                         },
-                        ticks: {
-                            font: { size: 12, weight: '500' },
-                            color: '#94a3b8',
-                            callback: function(value) {
-                                // Default prefix to rupees if ALL datasets are rupees. 
-                                // Otherwise don't show prefix on Y axis to avoid confusion on mixed charts.
-                                const allRs = datasetLabels.every(l => l.includes('Rs.'));
-                                const prefix = allRs ? '₹' : '';
-                                
-                                let formattedValue = value;
-                                if (value >= 10000000) formattedValue = (value / 10000000).toFixed(1) + ' Cr';
-                                else if (value >= 100000) formattedValue = (value / 100000).toFixed(1) + ' L';
-                                else if (value >= 1000) formattedValue = (value / 1000).toFixed(1) + ' K';
-                                
-                                return prefix + formattedValue;
+                        tooltip: {
+                            titleFont: { size: 14, weight: '600' },
+                            bodyFont: { size: 14, weight: '500' },
+                            callbacks: {
+                                label: function(context) {
+                                    const actualVal = context.dataset.actualData[context.dataIndex];
+                                    const isRs = context.dataset.label.includes('Rs.');
+                                    const prefix = isRs && actualVal > 0 ? '₹' : '';
+                                    let title = context.dataset.label;
+                                    if (title.includes('Increase') || title.includes('Decrease')) {
+                                        return `${title}: ${prefix}${DataProcessor.formatCurrency(context.raw)} (Total: ${prefix}${DataProcessor.formatCurrency(actualVal)})`;
+                                    }
+                                    return `${title}: ${prefix}${DataProcessor.formatCurrency(actualVal)}`;
+                                }
                             }
                         }
                     },
-                    x: {
-                        stacked: true,
-                        grid: {
-                            display: false,
-                            drawBorder: false
+                    scales: {
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            grid: {
+                                color: this.colors.grid,
+                                drawBorder: false,
+                                borderDash: [4, 4]
+                            },
+                            ticks: {
+                                font: { size: 12, weight: '500' },
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    const allRs = datasetLabels.every(l => l.includes('Rs.'));
+                                    const prefix = allRs ? '₹' : '';
+                                    let formattedValue = value;
+                                    if (value >= 10000000) formattedValue = (value / 10000000).toFixed(1) + ' Cr';
+                                    else if (value >= 100000) formattedValue = (value / 100000).toFixed(1) + ' L';
+                                    else if (value >= 1000) formattedValue = (value / 1000).toFixed(1) + ' K';
+                                    return prefix + formattedValue;
+                                }
+                            }
                         },
-                        ticks: {
-                            font: { size: 12, weight: '500' },
-                            color: '#64748b'
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: { size: 12, weight: '500' },
+                                color: '#64748b'
+                            }
                         }
+                    },
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeOutQuart'
                     }
-                },
-                animation: {
-                    duration: 1200,
-                    easing: 'easeOutQuart'
                 }
-            }
+            });
         });
     },
     

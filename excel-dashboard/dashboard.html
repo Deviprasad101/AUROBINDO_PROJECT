@@ -156,23 +156,7 @@
                     </div>
                 </div>
 
-                <div class="filter-group">
-                    <label for="trend-select">Trend Pattern</label>
-                    <div class="custom-multi-select" id="trend-multi-select" data-disabled="true">
-                        <div class="select-selected">
-                            <span class="selected-text">All</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                        </div>
-                        <div class="select-items hidden" id="trend-options-container">
-                            <label class="checkbox-container"><input type="checkbox" value="all" data-name="All"> All<span class="checkmark"></span></label>
-                            <label class="checkbox-container"><input type="checkbox" value="increased" data-name="Increased"> Increased<span class="checkmark"></span></label>
-                            <label class="checkbox-container"><input type="checkbox" value="decreased" data-name="Decreased"> Decreased<span class="checkmark"></span></label>
-                            <label class="checkbox-container"><input type="checkbox" value="unchanged" data-name="No Change"> No Change<span class="checkmark"></span></label>
-                        </div>
-                    </div>
-                </div>
+                
 
                 <div class="filter-actions">
                     <button id="reset-filter-btn" class="btn btn-secondary" disabled>
@@ -199,9 +183,7 @@
                         </svg>
                         Monthly Trend (Units)
                     </h3>
-                    <div class="chart-container">
-                        <canvas id="chart-monthly-trend-units"></canvas>
-                    </div>
+                    <div id="wrapper-monthly-trend-units"></div>
                 </div>
                 
                 <div class="chart-card full-width" id="chart-rupees-card">
@@ -211,9 +193,7 @@
                         </svg>
                         Monthly Trend (Rupees / Rates)
                     </h3>
-                    <div class="chart-container">
-                        <canvas id="chart-monthly-trend-rupees"></canvas>
-                    </div>
+                    <div id="wrapper-monthly-trend-rupees"></div>
                 </div>
                 
                 <!-- Category/Unit Dist now hidden logically if single unit, handled in JS -->
@@ -323,23 +303,7 @@
                     </div>
                 </div>
 
-                <div class="filter-group">
-                    <label for="ht-trend-select">Trend Pattern</label>
-                    <div class="custom-multi-select" id="ht-trend-multi-select" data-disabled="true">
-                        <div class="select-selected">
-                            <span class="selected-text">All</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                        </div>
-                        <div class="select-items hidden" id="ht-trend-options-container">
-                            <label class="checkbox-container"><input type="checkbox" value="all" data-name="All"> All<span class="checkmark"></span></label>
-                            <label class="checkbox-container"><input type="checkbox" value="increased" data-name="Increased"> Increased<span class="checkmark"></span></label>
-                            <label class="checkbox-container"><input type="checkbox" value="decreased" data-name="Decreased"> Decreased<span class="checkmark"></span></label>
-                            <label class="checkbox-container"><input type="checkbox" value="unchanged" data-name="No Change"> No Change<span class="checkmark"></span></label>
-                        </div>
-                    </div>
-                </div>
+                
 
                 <div class="filter-actions">
                     <button id="ht-reset-filter-btn" class="btn btn-secondary" disabled>
@@ -366,9 +330,7 @@
                         </svg>
                         HT Monthly Trend (KWH)
                     </h3>
-                    <div class="chart-container">
-                        <canvas id="chart-ht-monthly-trend"></canvas>
-                    </div>
+                    <div id="wrapper-ht-monthly-trend"></div>
                 </div>
                 
                 <div class="chart-card" id="ht-pie-chart-card">
@@ -440,10 +402,10 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/app.js?v=17"></script>
-    <script src="js/excelReader.js?v=17"></script>
-    <script src="js/dataProcessor.js?v=17"></script>
-    <script src="js/charts.js?v=17"></script>
-    <script src="js/dashboard.js?v=17"></script>
+    <script src="js/app.js?v=18"></script>
+    <script src="js/excelReader.js?v=18"></script>
+    <script src="js/dataProcessor.js?v=18"></script>
+    <script src="js/charts.js?v=18"></script>
+    <script src="js/dashboard.js?v=18"></script>
 </body>
 </html>

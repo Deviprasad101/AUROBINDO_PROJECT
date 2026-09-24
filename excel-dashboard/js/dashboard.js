@@ -26,7 +26,7 @@ const Dashboard = {
         this.monthSelect = document.getElementById('month-multi-select');
         this.yearSelect = document.getElementById('year-multi-select');
         this.metricSelect = document.getElementById('metric-multi-select');
-        this.trendSelect = document.getElementById('trend-multi-select');
+        
         this.applyFilterBtn = document.getElementById('apply-filter-btn');
         this.applyFilterText = document.getElementById('apply-filter-text');
         this.resetFilterBtn = document.getElementById('reset-filter-btn');
@@ -37,7 +37,7 @@ const Dashboard = {
         this.htMonthSelect = document.getElementById('ht-month-multi-select');
         this.htYearSelect = document.getElementById('ht-year-multi-select');
         this.htMetricSelect = document.getElementById('ht-metric-multi-select');
-        this.htTrendSelect = document.getElementById('ht-trend-multi-select');
+        
         this.htApplyFilterBtn = document.getElementById('ht-apply-filter-btn');
         this.htApplyFilterText = document.getElementById('ht-apply-filter-text');
         this.htResetFilterBtn = document.getElementById('ht-reset-filter-btn');
@@ -333,9 +333,7 @@ const Dashboard = {
             this.setMultiSelectValues(this.monthSelect, []);
             this.setMultiSelectValues(this.unitSelect, []);
             if (this.metricSelect) this.setMultiSelectValues(this.metricSelect, []);
-            if (this.trendSelect) this.setMultiSelectValues(this.trendSelect, ['all']);
-            if (this.trendSelect) this.setMultiSelectValues(this.trendSelect, ['all']);
-            
+                                    
             this.setMultiSelectValues(this.htYearSelect, []);
             this.setMultiSelectValues(this.htMonthSelect, []);
             
@@ -435,9 +433,7 @@ const Dashboard = {
             this.setMultiSelectValues(this.monthSelect, []);
             this.setMultiSelectValues(this.unitSelect, []);
             if (this.metricSelect) this.setMultiSelectValues(this.metricSelect, []);
-            if (this.trendSelect) this.setMultiSelectValues(this.trendSelect, ['all']);
-            if (this.trendSelect) this.setMultiSelectValues(this.trendSelect, ['all']);
-            
+                                    
             this.updateDashboardView([], [], []);
             this.tableSearch.value = "";
         }
@@ -473,8 +469,9 @@ const Dashboard = {
         this.updateTable(filteredData, this.dataTableBody, this.tableEmptyState, "", metricKeys, metricNames);
         
         // Update Charts with selected metric NAMES (since dataProcessor now uses actual names as keys)
-        const unitMetrics = metricNames.filter(m => !m.toLowerCase().includes('(rs.)') && !m.toLowerCase().includes('rate'));
-        const rupeesMetrics = metricNames.filter(m => m.toLowerCase().includes('(rs.)') || m.toLowerCase().includes('rate'));
+        const isRupee = (m) => m.toLowerCase().includes('(rs.)') || m.toLowerCase().includes('rate') || m.toLowerCase().includes('charges') || m.toLowerCase().includes('wheeling');
+        const unitMetrics = metricNames.filter(m => !isRupee(m));
+        const rupeesMetrics = metricNames.filter(m => isRupee(m));
         
         // 1. Units Chart
         const unitsCard = document.getElementById('chart-units-card');
@@ -482,7 +479,7 @@ const Dashboard = {
             unitsCard.style.display = 'block';
             const unitChartData = DataProcessor.getChartData(filteredData, unitMetrics);
             if (Object.keys(unitChartData.monthlyTrend).length > 0) {
-                ChartManager.createMonthlyTrendChart(unitChartData.monthlyTrend, 'chart-monthly-trend-units', 'monthlyTrendUnits', unitMetrics);
+                ChartManager.createMonthlyTrendChart(unitChartData.monthlyTrend, 'wrapper-monthly-trend-units', 'monthlyTrendUnits', unitMetrics);
             }
         } else {
             unitsCard.style.display = 'none';
@@ -494,7 +491,7 @@ const Dashboard = {
             rupeesCard.style.display = 'block';
             const rupeesChartData = DataProcessor.getChartData(filteredData, rupeesMetrics);
             if (Object.keys(rupeesChartData.monthlyTrend).length > 0) {
-                ChartManager.createMonthlyTrendChart(rupeesChartData.monthlyTrend, 'chart-monthly-trend-rupees', 'monthlyTrendRupees', rupeesMetrics);
+                ChartManager.createMonthlyTrendChart(rupeesChartData.monthlyTrend, 'wrapper-monthly-trend-rupees', 'monthlyTrendRupees', rupeesMetrics);
             }
         } else {
             rupeesCard.style.display = 'none';
@@ -555,9 +552,7 @@ const Dashboard = {
             this.setMultiSelectValues(this.htYearSelect, []);
             this.setMultiSelectValues(this.htMonthSelect, []);
             if (this.htMetricSelect) this.setMultiSelectValues(this.htMetricSelect, []);
-            if (this.htTrendSelect) this.setMultiSelectValues(this.htTrendSelect, ['all']);
-            if (this.htTrendSelect) this.setMultiSelectValues(this.htTrendSelect, ['all']);
-            
+                                    
             this.updateHTDashboardView([], []);
             this.htTableSearch.value = "";
         }
@@ -573,7 +568,7 @@ const Dashboard = {
             this.updateKPIs([], metricNames, this.htDynamicKpiContainer);
             this.updateTable([], this.htDataTableBody, this.htTableEmptyState, "", metricKeys, metricNames);
             document.getElementById('ht-pie-chart-card').style.display = 'none';
-            ChartManager.createMonthlyTrendChart({}, 'chart-ht-monthly-trend', 'htMonthlyTrend', metricNames);
+            ChartManager.createMonthlyTrendChart({}, 'wrapper-ht-monthly-trend', 'htMonthlyTrend', metricNames);
             return;
         }
         
@@ -602,7 +597,7 @@ const Dashboard = {
                     trendData[row.monthYear][metricName] += (row.metrics ? (row.metrics[metricName] || 0) : 0);
                 });
             });
-            ChartManager.createMonthlyTrendChart(trendData, 'chart-ht-monthly-trend', 'htMonthlyTrend', metricNames);
+            ChartManager.createMonthlyTrendChart(trendData, 'wrapper-ht-monthly-trend', 'htMonthlyTrend', metricNames);
         }
         
         const pieCard = document.getElementById('ht-pie-chart-card');
