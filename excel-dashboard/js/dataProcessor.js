@@ -68,13 +68,8 @@ const DataProcessor = {
                                     value: 0,
                                     units: unitValue,
                                     metrics: {
-                                        'cmd_kva': 0, 'rmd_kva': 0, 'eb_units_kvah': 0,
-                                        'wheeling_css_as': 0, 'eb_value_total': 0,
-                                        'oa_issued_iex': 0, 'oa_considered_iex': 0,
-                                        'iex_value': 0, 'oa_unit_ltppa': 0,
-                                        'ltppa_value': 0, 'solar_rooftop': 0,
-                                        'dg_units': 0, 'total_units': unitValue,
-                                        'total_value': 0, 'avg_rate': 0
+                                        'UNITS APL HC-01': categoryName === 'APL HC-01' ? unitValue : 0,
+                                        'UNITS APL HC-03': categoryName === 'APL HC-03' ? unitValue : 0
                                     },
                                     remarks: '',
                                     source: 'HT power consumption.xlsx',
@@ -111,21 +106,23 @@ const DataProcessor = {
                     availableUnitsSet.add(unitName);
                     
                     const metricsObj = {
-                        'cmd_kva': parseFloat(getFlexibleValue(row, 'CMD')) || 0,
-                        'rmd_kva': parseFloat(getFlexibleValue(row, 'RMD')) || 0,
-                        'eb_units_kvah': parseFloat(getFlexibleValue(row, 'EB Units')) || 0,
-                        'wheeling_css_as': parseFloat(getFlexibleValue(row, 'Wheeling')) || 0,
-                        'eb_value_total': parseFloat(getFlexibleValue(row, 'EB Value Total')) || 0,
-                        'oa_issued_iex': parseFloat(getFlexibleValue(row, 'OA Issued')) || 0,
-                        'oa_considered_iex': parseFloat(getFlexibleValue(row, 'OA Considered')) || 0,
-                        'iex_value': parseFloat(getFlexibleValue(row, 'IEX-Value')) || 0,
-                        'oa_unit_ltppa': parseFloat(getFlexibleValue(row, 'LTPPA (KWh)') || getFlexibleValue(row, 'OA Unit')) || 0,
-                        'ltppa_value': parseFloat(getFlexibleValue(row, 'LTPPA-Value')) || 0,
-                        'solar_rooftop': parseFloat(getFlexibleValue(row, 'Solar')) || 0,
-                        'dg_units': parseFloat(getFlexibleValue(row, 'DG Units')) || 0,
-                        'total_units': parseFloat(getFlexibleValue(row, 'Total Unts')) || 0,
-                        'total_value': parseFloat(getFlexibleValue(row, 'Total Value')) || 0,
-                        'avg_rate': parseFloat(getFlexibleValue(row, 'Avg. Rate')) || 0
+                        'CMD (KVA)': parseFloat(getFlexibleValue(row, 'CMD')) || 0,
+                        'RMD (KVA)': parseFloat(getFlexibleValue(row, 'RMD')) || 0,
+                        'EB Units (Kvah)': parseFloat(getFlexibleValue(row, 'EB Units')) || 0,
+                        'OA Issued IEX (Kvah)': parseFloat(getFlexibleValue(row, 'OA Issued')) || 0,
+                        'OA Considered IEX (Kvah)': parseFloat(getFlexibleValue(row, 'OA Considered')) || 0,
+                        'IEX-Value (Rs.)': parseFloat(getFlexibleValue(row, 'IEX-Value')) || 0,
+                        'Wheeling /CSS/AS': parseFloat(getFlexibleValue(row, 'Wheeling')) || 0,
+                        'FSA/FPPCA/Other Charges': parseFloat(getFlexibleValue(row, 'FSA')) || parseFloat(getFlexibleValue(row, 'FPPCA')) || 0,
+                        'EB Value Total (Rs.)': parseFloat(getFlexibleValue(row, 'EB Value Total')) || 0,
+                        'Solar-Rooftop (Kvah)': parseFloat(getFlexibleValue(row, 'Solar')) || 0,
+                        'DG Units (Kvah)': parseFloat(getFlexibleValue(row, 'DG Units')) || 0,
+                        'Total Unts (Kvah)': parseFloat(getFlexibleValue(row, 'Total Unts')) || 0,
+                        'EB & OA units (Kvah)': parseFloat(getFlexibleValue(row, 'EB & OA units')) || parseFloat(getFlexibleValue(row, 'EB & OA')) || 0,
+                        'Total value (Rs.)': parseFloat(getFlexibleValue(row, 'Total value')) || parseFloat(getFlexibleValue(row, 'Total Value')) || 0,
+                        'OA/ IEX Rate/Kwh': parseFloat(getFlexibleValue(row, 'OA/ IEX Rate')) || parseFloat(getFlexibleValue(row, 'OA/IEX')) || 0,
+                        'Landed Rate/Kwh with FPPC (Rs.)': parseFloat(getFlexibleValue(row, 'Landed Rate/Kwh with FPPC')) || 0,
+                        'Landed Rate/Kwh without FPPC (Rs.)': parseFloat(getFlexibleValue(row, 'Landed Rate/Kwh without FPPC')) || 0
                     };
                     
                     const remarksStr = getFlexibleValue(row, 'Remarks') || '';
@@ -236,34 +233,16 @@ const DataProcessor = {
             const rowYear = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
             
-            const matchYear = (years.length === 0 || years.includes("all")) ? true : years.includes(rowYear);
-            const matchMonth = (months.length === 0 || months.includes("all")) ? true : months.includes(rowMonth);
-            const matchUnit = (units.length === 0 || units.includes("all")) ? true : units.includes(row.unitName);
+            const matchYear = years.includes("all") ? true : (years.length > 0 && years.includes(rowYear));
+            const matchMonth = months.includes("all") ? true : (months.length > 0 && months.includes(rowMonth));
+            const matchUnit = units.includes("all") ? true : (units.length > 0 && units.includes(row.unitName));
             const matchSource = row.unitName !== 'HT Power (Merged)';
             
             return matchYear && matchMonth && matchUnit && matchSource;
         });
     },
     
-    /**
-     * Get data explicitly filtered for Power Consumption Analysis Tab
-     * (Merges "Unit-VII" from FDF Power and "HT Power (Merged)")
-     */
-    getPowerConsumptionData: function(years = [], months = []) {
-        return AppState.processedData.filter(row => {
-            const rowYear = row.monthYear.split('-')[0];
-            const rowMonth = row.monthYear.split('-')[1];
-            
-            const matchYear = (years.length === 0 || years.includes("all")) ? true : years.includes(rowYear);
-            const matchMonth = (months.length === 0 || months.includes("all")) ? true : months.includes(rowMonth);
-            
-            // Only include Unit VII or HT Power
-            const matchSource = row.unitName.replace(/\s+/g, '').toLowerCase() === 'unit-vii' || 
-                                row.unitName === 'HT Power (Merged)';
-            
-            return matchYear && matchMonth && matchSource;
-        });
-    },
+
     
     /**
      * Get data explicitly filtered for HT Power Analysis Tab
@@ -274,8 +253,8 @@ const DataProcessor = {
             const rowYear = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
             
-            const matchYear = (years.length === 0 || years.includes("all")) ? true : years.includes(rowYear);
-            const matchMonth = (months.length === 0 || months.includes("all")) ? true : months.includes(rowMonth);
+            const matchYear = years.includes("all") ? true : (years.length > 0 && years.includes(rowYear));
+            const matchMonth = months.includes("all") ? true : (months.length > 0 && months.includes(rowMonth));
             
             // Only include HT Power
             const matchSource = row.unitName === 'HT Power (Merged)';
@@ -323,6 +302,51 @@ const DataProcessor = {
             avgValue: totalValue / data.length,
             totalUnits: totalUnits
         };
+    },
+    
+    /**
+     * Calculate detailed KPIs grouped by month for the dynamic grid
+     */
+    calculateDetailedKPIsByMonth: function(filteredData) {
+        if (!filteredData || filteredData.length === 0) return {};
+        
+        const monthlyGroups = {};
+        
+        filteredData.forEach(row => {
+            const groupKey = `${row.monthYear}|${row.unitName}`;
+            
+            if (!monthlyGroups[groupKey]) {
+                monthlyGroups[groupKey] = {
+                    'CMD (KVA)': 0,
+                    'RMD (KVA)': 0,
+                    'EB Units (Kvah)': 0,
+                    'OA Issued IEX (Kvah)': 0,
+                    'OA Considered IEX (Kvah)': 0,
+                    'IEX-Value (Rs.)': 0,
+                    'Wheeling /CSS/AS': 0,
+                    'FSA/FPPCA/Other Charges': 0,
+                    'EB Value Total (Rs.)': 0,
+                    'Solar-Rooftop (Kvah)': 0,
+                    'DG Units (Kvah)': 0,
+                    'Total Unts (Kvah)': 0,
+                    'EB & OA units (Kvah)': 0,
+                    'Total value (Rs.)': 0,
+                    'OA/ IEX Rate/Kwh': 0,
+                    'Landed Rate/Kwh with FPPC (Rs.)': 0,
+                    'Landed Rate/Kwh without FPPC (Rs.)': 0,
+                    'UNITS APL HC-01': 0,
+                    'UNITS APL HC-03': 0
+                };
+            }
+            
+            if (row.metrics) {
+                for (const key in monthlyGroups[groupKey]) {
+                    monthlyGroups[groupKey][key] += (row.metrics[key] || 0);
+                }
+            }
+        });
+        
+        return monthlyGroups;
     },
     
     /**

@@ -19,7 +19,6 @@ const Dashboard = {
         this.tabNavigation = document.getElementById('tab-navigation');
         this.tabBtns = document.querySelectorAll('.tab-btn');
         this.dashboardContent = document.getElementById('dashboard-content');
-        this.powerDashboardContent = document.getElementById('power-dashboard-content');
         this.htDashboardContent = document.getElementById('ht-dashboard-content');
         
         // Filters (Multi-Select Containers)
@@ -32,16 +31,11 @@ const Dashboard = {
         this.resetFilterBtn = document.getElementById('reset-filter-btn');
         this.exportBtn = document.getElementById('export-btn');
         
-        // Power Filters (Tab 2)
-        this.powerMonthSelect = document.getElementById('power-month-multi-select');
-        this.powerYearSelect = document.getElementById('power-year-multi-select');
-        this.powerApplyFilterBtn = document.getElementById('power-apply-filter-btn');
-        this.powerApplyFilterText = document.getElementById('power-apply-filter-text');
-        this.powerResetFilterBtn = document.getElementById('power-reset-filter-btn');
         
         // HT Filters (Tab 3)
         this.htMonthSelect = document.getElementById('ht-month-multi-select');
         this.htYearSelect = document.getElementById('ht-year-multi-select');
+        this.htMetricSelect = document.getElementById('ht-metric-multi-select');
         this.htApplyFilterBtn = document.getElementById('ht-apply-filter-btn');
         this.htApplyFilterText = document.getElementById('ht-apply-filter-text');
         this.htResetFilterBtn = document.getElementById('ht-reset-filter-btn');
@@ -60,25 +54,13 @@ const Dashboard = {
         this.tableEmptyState = document.getElementById('table-empty-state');
         this.tableSearch = document.getElementById('table-search');
         
-        // Power Specific DOM
-        this.powerDataTableBody = document.getElementById('power-data-table-body');
-        this.powerTableEmptyState = document.getElementById('power-table-empty-state');
-        this.powerTableSearch = document.getElementById('power-table-search');
-        
-        this.kpiPowerTotalRecords = document.getElementById('kpi-power-total-records');
-        this.kpiPowerTotalValue = document.getElementById('kpi-power-total-value');
-        this.kpiPowerAvgValue = document.getElementById('kpi-power-avg-value');
-        this.kpiPowerCategories = document.getElementById('kpi-power-categories');
         
         // HT Specific DOM
         this.htDataTableBody = document.getElementById('ht-data-table-body');
         this.htTableEmptyState = document.getElementById('ht-table-empty-state');
         this.htTableSearch = document.getElementById('ht-table-search');
-        // HT KPIs
-        this.kpiHtTotalRecords = document.getElementById('kpi-ht-total-records');
-        this.kpiHtAvgUnits = document.getElementById('kpi-ht-avg-units');
-        this.kpiHtMaxUnits = document.getElementById('kpi-ht-max-units');
-        this.kpiHtTotalUnits = document.getElementById('kpi-ht-total-units');
+        // Dynamic container instead of static cards
+        this.htDynamicKpiContainer = document.getElementById('ht-dynamic-kpi-container');
     },
     
     bindEvents: function() {
@@ -108,22 +90,19 @@ const Dashboard = {
             }, false);
         }
         
-        // Setup Custom Multi-Selects
-        this.setupMultiSelect(this.unitSelect, () => this.onFilterChange());
-        this.setupMultiSelect(this.monthSelect, () => this.onFilterChange());
-        this.setupMultiSelect(this.yearSelect, () => this.onFilterChange());
-        this.setupMultiSelect(this.metricSelect, () => this.onFilterChange());
+        // Setup Custom Multi-Selects for instant filtering
+        this.setupMultiSelect(this.unitSelect, () => this.applyFilter());
+        this.setupMultiSelect(this.monthSelect, () => this.applyFilter());
+        this.setupMultiSelect(this.yearSelect, () => this.applyFilter());
+        this.setupMultiSelect(this.metricSelect, () => this.applyFilter());
         
         this.applyFilterBtn.addEventListener('click', () => this.applyFilter());
         this.resetFilterBtn.addEventListener('click', () => this.resetFilters());
         
-        this.setupMultiSelect(this.powerMonthSelect, () => this.onPowerFilterChange());
-        this.setupMultiSelect(this.powerYearSelect, () => this.onPowerFilterChange());
-        this.powerApplyFilterBtn.addEventListener('click', () => this.applyPowerFilter());
-        this.powerResetFilterBtn.addEventListener('click', () => this.resetPowerFilters());
         
         this.setupMultiSelect(this.htMonthSelect, () => this.onHtFilterChange());
         this.setupMultiSelect(this.htYearSelect, () => this.onHtFilterChange());
+        this.setupMultiSelect(this.htMetricSelect, () => this.onHtFilterChange());
         this.htApplyFilterBtn.addEventListener('click', () => this.applyHtFilter());
         this.htResetFilterBtn.addEventListener('click', () => this.resetHtFilters());
         
@@ -138,7 +117,6 @@ const Dashboard = {
         
         this.exportBtn.addEventListener('click', () => this.exportToCSV());
         this.tableSearch.addEventListener('input', (e) => this.handleSearch(e.target.value));
-        this.powerTableSearch.addEventListener('input', (e) => this.handlePowerSearch(e.target.value));
         this.htTableSearch.addEventListener('input', (e) => this.handleHtSearch(e.target.value));
         
         // Tab switching
@@ -234,6 +212,10 @@ const Dashboard = {
     
     getMultiSelectValues: function(containerElement) {
         if (!containerElement) return [];
+        const allOption = containerElement.querySelector('input[type="checkbox"][value="all"]');
+        if (allOption && allOption.checked) {
+            return ['all'];
+        }
         const checked = Array.from(containerElement.querySelectorAll('input[type="checkbox"]:checked'));
         return checked.filter(cb => cb.value !== 'all').map(cb => cb.value);
     },
@@ -314,13 +296,10 @@ const Dashboard = {
         this.resetFilterBtn.disabled = false;
         this.exportBtn.disabled = false;
         
-        this.powerMonthSelect.dataset.disabled = "false";
-        this.powerYearSelect.dataset.disabled = "false";
-        this.powerApplyFilterBtn.disabled = false;
-        this.powerResetFilterBtn.disabled = false;
         
         this.htMonthSelect.dataset.disabled = "false";
         this.htYearSelect.dataset.disabled = "false";
+        if (this.htMetricSelect) this.htMetricSelect.dataset.disabled = "false";
         this.htApplyFilterBtn.disabled = false;
         this.htResetFilterBtn.disabled = false;
         
@@ -334,36 +313,26 @@ const Dashboard = {
             if (activePane) activePane.classList.remove('hidden');
         }
         
-        // Select latest month by default
+        // Do not select any filters by default
         if (AppState.availableMonths.length > 0) {
-            const latest = AppState.availableMonths[AppState.availableMonths.length - 1];
-            const [year, month] = latest.split('-');
+            AppState.selectedYear = [];
+            AppState.selectedMonthOnly = [];
+            AppState.selectedUnit = [];
             
-            AppState.selectedYear = [year];
-            AppState.selectedMonthOnly = [month];
-            AppState.selectedUnit = ['all'];
-            
-            AppState.powerSelectedYear = [year];
-            AppState.powerSelectedMonthOnly = [month];
-            
-            AppState.htSelectedYear = [year];
-            AppState.htSelectedMonthOnly = [month];
+            AppState.htSelectedYear = [];
+            AppState.htSelectedMonthOnly = [];
             
             // Set dropdowns
-            this.setMultiSelectValues(this.yearSelect, [year]);
-            this.setMultiSelectValues(this.monthSelect, [month]);
-            this.setMultiSelectValues(this.unitSelect, ['all']);
-            if (this.metricSelect) this.setMultiSelectValues(this.metricSelect, ['total_units']);
+            this.setMultiSelectValues(this.yearSelect, []);
+            this.setMultiSelectValues(this.monthSelect, []);
+            this.setMultiSelectValues(this.unitSelect, []);
+            if (this.metricSelect) this.setMultiSelectValues(this.metricSelect, []);
             
-            this.setMultiSelectValues(this.powerYearSelect, [year]);
-            this.setMultiSelectValues(this.powerMonthSelect, [month]);
+            this.setMultiSelectValues(this.htYearSelect, []);
+            this.setMultiSelectValues(this.htMonthSelect, []);
             
-            this.setMultiSelectValues(this.htYearSelect, [year]);
-            this.setMultiSelectValues(this.htMonthSelect, [month]);
-            
-            this.updateDashboardView([year], [month], ['all']);
-            this.updatePowerDashboardView([year], [month]);
-            this.updateHTDashboardView([year], [month]);
+            this.updateDashboardView([], [], []);
+            this.updateHTDashboardView([], []);
         }
     },
     
@@ -373,7 +342,7 @@ const Dashboard = {
         if (!itemsDiv) return;
         
         // Reset with 'all' option
-        itemsDiv.innerHTML = `<label class="checkbox-container"><input type="checkbox" value="all" checked> ${allText}<span class="checkmark"></span></label>`;
+        itemsDiv.innerHTML = `<label class="checkbox-container"><input type="checkbox" value="all"> ${allText}<span class="checkmark"></span></label>`;
         
         options.forEach(opt => {
             itemsDiv.innerHTML += `<label class="checkbox-container"><input type="checkbox" value="${opt.value}"> ${opt.text}<span class="checkmark"></span></label>`;
@@ -394,7 +363,6 @@ const Dashboard = {
         // Populate Year
         const yearOptions = Array.from(years).sort().reverse().map(y => ({value: y, text: y}));
         this.populateMultiSelect(this.yearSelect, yearOptions, "All Years");
-        this.populateMultiSelect(this.powerYearSelect, yearOptions, "All Years");
         this.populateMultiSelect(this.htYearSelect, yearOptions, "All Years");
         
         // Populate Month
@@ -402,7 +370,6 @@ const Dashboard = {
                             "July", "August", "September", "October", "November", "December"];
         const monthOptions = Array.from(months).sort().map(m => ({value: m, text: monthNames[parseInt(m) - 1]}));
         this.populateMultiSelect(this.monthSelect, monthOptions, "All Months");
-        this.populateMultiSelect(this.powerMonthSelect, monthOptions, "All Months");
         this.populateMultiSelect(this.htMonthSelect, monthOptions, "All Months");
         
         // Populate Unit
@@ -449,18 +416,16 @@ const Dashboard = {
     
     resetFilters: function() {
         if (AppState.availableMonths.length > 0) {
-            const latest = AppState.availableMonths[AppState.availableMonths.length - 1];
-            const [year, month] = latest.split('-');
+            AppState.selectedYear = [];
+            AppState.selectedMonthOnly = [];
+            AppState.selectedUnit = [];
             
-            AppState.selectedYear = [year];
-            AppState.selectedMonthOnly = [month];
-            AppState.selectedUnit = ['all'];
+            this.setMultiSelectValues(this.yearSelect, []);
+            this.setMultiSelectValues(this.monthSelect, []);
+            this.setMultiSelectValues(this.unitSelect, []);
+            if (this.metricSelect) this.setMultiSelectValues(this.metricSelect, []);
             
-            this.setMultiSelectValues(this.yearSelect, [year]);
-            this.setMultiSelectValues(this.monthSelect, [month]);
-            this.setMultiSelectValues(this.unitSelect, ['all']);
-            
-            this.updateDashboardView([year], [month], ['all']);
+            this.updateDashboardView([], [], []);
             this.tableSearch.value = "";
         }
     },
@@ -470,119 +435,74 @@ const Dashboard = {
         let metricKeys = this.getMultiSelectValues(this.metricSelect);
         let metricNames = this.getMultiSelectNames(this.metricSelect);
         
-        if (metricKeys.length === 0) {
-            metricKeys = ['total_units'];
-            metricNames = ['Total Units (KWH)'];
+        if (years.length === 0 || months.length === 0 || units.length === 0 || metricKeys.length === 0) {
+            // If any filter is completely unselected, forcefully return empty data
+            // to fulfill the user request that "nothing will not come".
+            const emptyData = [];
+            this.updateKPIs(emptyData, metricNames);
+            this.updateTable(emptyData, this.dataTableBody, this.tableEmptyState, "", metricKeys, metricNames);
+            
+            // Hide charts
+            document.getElementById('chart-units-card').style.display = 'none';
+            document.getElementById('chart-rupees-card').style.display = 'none';
+            document.getElementById('pie-chart-card').style.display = 'none';
+            
+            return;
         }
         
         // Get filtered data
         const filteredData = DataProcessor.getFilteredData(years, months, units);
         
-        // Update KPIs
-        const kpis = DataProcessor.calculateKPIs(filteredData);
-        this.updateKPIs(kpis);
+        // Update KPIs (Dynamic generation by month, filtered by selected metrics)
+        this.updateKPIs(filteredData, metricNames);
         
         // Update Table
         this.updateTable(filteredData, this.dataTableBody, this.tableEmptyState, "", metricKeys, metricNames);
         
-        // Update Charts with selected metrics
-        const chartData = DataProcessor.getChartData(filteredData, metricKeys);
+        // Update Charts with selected metric NAMES (since dataProcessor now uses actual names as keys)
+        const unitMetrics = metricNames.filter(m => !m.toLowerCase().includes('(rs.)') && !m.toLowerCase().includes('rate'));
+        const rupeesMetrics = metricNames.filter(m => m.toLowerCase().includes('(rs.)') || m.toLowerCase().includes('rate'));
         
-        if (Object.keys(chartData.monthlyTrend).length > 0) {
-            ChartManager.createMonthlyTrendChart(chartData.monthlyTrend, 'chart-monthly-trend', 'monthlyTrend', metricNames);
+        // 1. Units Chart
+        const unitsCard = document.getElementById('chart-units-card');
+        if (unitMetrics.length > 0) {
+            unitsCard.style.display = 'block';
+            const unitChartData = DataProcessor.getChartData(filteredData, unitMetrics);
+            if (Object.keys(unitChartData.monthlyTrend).length > 0) {
+                ChartManager.createMonthlyTrendChart(unitChartData.monthlyTrend, 'chart-monthly-trend-units', 'monthlyTrendUnits', unitMetrics);
+            }
+        } else {
+            unitsCard.style.display = 'none';
+        }
+
+        // 2. Rupees Chart
+        const rupeesCard = document.getElementById('chart-rupees-card');
+        if (rupeesMetrics.length > 0) {
+            rupeesCard.style.display = 'block';
+            const rupeesChartData = DataProcessor.getChartData(filteredData, rupeesMetrics);
+            if (Object.keys(rupeesChartData.monthlyTrend).length > 0) {
+                ChartManager.createMonthlyTrendChart(rupeesChartData.monthlyTrend, 'chart-monthly-trend-rupees', 'monthlyTrendRupees', rupeesMetrics);
+            }
+        } else {
+            rupeesCard.style.display = 'none';
         }
         
+        // Use the first metric for Pie Chart Distribution
         const pieCard = document.getElementById('pie-chart-card');
-        if (Object.keys(chartData.sourceDist).length > 0 && units && (units.includes('all') || units.length > 1)) {
-            pieCard.style.display = 'block';
-            ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-category-dist', 'categoryDist', metricNames[0]);
-            pieCard.parentElement.style.gridTemplateColumns = '2fr 1fr';
+        if (units && (units.includes('all') || units.length > 1)) {
+            const allChartData = DataProcessor.getChartData(filteredData, [metricNames[0]]);
+            if (Object.keys(allChartData.sourceDist).length > 0) {
+                pieCard.style.display = 'block';
+                ChartManager.createCategoryDistChart(allChartData.sourceDist, 'chart-category-dist', 'categoryDist', metricNames[0]);
+                pieCard.parentElement.classList.add('has-pie');
+            } else {
+                pieCard.style.display = 'none';
+                pieCard.parentElement.classList.remove('has-pie');
+            }
         } else {
             pieCard.style.display = 'none';
-            pieCard.parentElement.style.gridTemplateColumns = '1fr';
+            pieCard.parentElement.classList.remove('has-pie');
         }
-    },
-    
-    // --- POWER DASHBOARD LOGIC ---
-    
-    onPowerFilterChange: function() {
-        // Only validation, handled in apply
-    },
-    
-    applyPowerFilter: function() {
-        const years = this.getMultiSelectValues(this.powerYearSelect);
-        const months = this.getMultiSelectValues(this.powerMonthSelect);
-        
-        AppState.powerSelectedYear = years;
-        AppState.powerSelectedMonthOnly = months;
-        
-        const originalText = this.powerApplyFilterText.textContent;
-        this.powerApplyFilterText.textContent = "Applying...";
-        this.powerApplyFilterBtn.disabled = true;
-        
-        setTimeout(() => {
-            this.updatePowerDashboardView(years, months);
-            this.powerApplyFilterText.textContent = originalText;
-            this.powerApplyFilterBtn.disabled = false;
-        }, 150);
-    },
-    
-    resetPowerFilters: function() {
-        if (AppState.availableMonths.length > 0) {
-            const latest = AppState.availableMonths[AppState.availableMonths.length - 1];
-            const [year, month] = latest.split('-');
-            
-            AppState.powerSelectedYear = [year];
-            AppState.powerSelectedMonthOnly = [month];
-            
-            this.setMultiSelectValues(this.powerYearSelect, [year]);
-            this.setMultiSelectValues(this.powerMonthSelect, [month]);
-            
-            this.updatePowerDashboardView([year], [month]);
-            this.powerTableSearch.value = "";
-        }
-    },
-    
-    updatePowerDashboardView: function(year, month) {
-        // Filter specific to Power Dashboard
-        const filteredData = DataProcessor.getPowerConsumptionData(year, month);
-        
-        // Update KPIs
-        const kpis = DataProcessor.calculateKPIs(filteredData);
-        this.updatePowerKPIs(kpis);
-        
-        // Update Table
-        this.updateTable(filteredData, this.powerDataTableBody, this.powerTableEmptyState);
-        
-        // Update Charts
-        const chartData = DataProcessor.getChartData(filteredData);
-        
-        if (Object.keys(chartData.monthlyTrend).length > 0) {
-            // Plot combined UNITS instead of Values
-            const trendData = {};
-            filteredData.forEach(row => {
-                if (!trendData[row.monthYear]) trendData[row.monthYear] = { units: 0 };
-                trendData[row.monthYear].units += (row.units || 0);
-            });
-            ChartManager.createMonthlyTrendChart(trendData, 'chart-power-monthly-trend', 'powerMonthlyTrend', ['Total Units (KWH)']);
-        }
-        
-        const pieCard = document.getElementById('power-pie-chart-card');
-        if (Object.keys(chartData.sourceDist).length > 0) {
-            pieCard.style.display = 'block';
-            ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-power-category-dist', 'powerCategoryDist', 'Total Units (KWH)');
-            pieCard.parentElement.style.gridTemplateColumns = '2fr 1fr';
-        } else {
-            pieCard.style.display = 'none';
-            pieCard.parentElement.style.gridTemplateColumns = '1fr';
-        }
-    },
-    
-    updatePowerKPIs: function(kpis) {
-        this.animateValue(this.kpiPowerTotalRecords, 0, kpis.totalRecords, 800, val => val.toLocaleString('en-IN'));
-        this.animateValue(this.kpiPowerTotalValue, 0, kpis.totalValue, 1000, val => '₹' + DataProcessor.formatCurrency(val));
-        this.animateValue(this.kpiPowerAvgValue, 0, kpis.avgValue, 1000, val => '₹' + DataProcessor.formatCurrency(val));
-        this.animateValue(this.kpiPowerCategories, 0, kpis.totalUnits, 1000, val => DataProcessor.formatCurrency(val));
     },
     
     // --- HT DASHBOARD LOGIC (Tab 3) ---
@@ -592,16 +512,20 @@ const Dashboard = {
     applyHtFilter: function() {
         const years = this.getMultiSelectValues(this.htYearSelect);
         const months = this.getMultiSelectValues(this.htMonthSelect);
+        const metricKeys = this.getMultiSelectValues(this.htMetricSelect);
+        const metricNames = this.getMultiSelectNames(this.htMetricSelect);
         
         AppState.htSelectedYear = years;
         AppState.htSelectedMonthOnly = months;
+        AppState.htMetricKeys = metricKeys;
+        AppState.htMetricNames = metricNames;
         
         const originalText = this.htApplyFilterText.textContent;
         this.htApplyFilterText.textContent = "Applying...";
         this.htApplyFilterBtn.disabled = true;
         
         setTimeout(() => {
-            this.updateHTDashboardView(years, months);
+            this.updateHTDashboardView(years, months, metricKeys, metricNames);
             this.htApplyFilterText.textContent = originalText;
             this.htApplyFilterBtn.disabled = false;
         }, 150);
@@ -609,77 +533,68 @@ const Dashboard = {
     
     resetHtFilters: function() {
         if (AppState.availableMonths.length > 0) {
-            const latest = AppState.availableMonths[AppState.availableMonths.length - 1];
-            const [year, month] = latest.split('-');
+            AppState.htSelectedYear = [];
+            AppState.htSelectedMonthOnly = [];
             
-            AppState.htSelectedYear = [year];
-            AppState.htSelectedMonthOnly = [month];
+            this.setMultiSelectValues(this.htYearSelect, []);
+            this.setMultiSelectValues(this.htMonthSelect, []);
+            if (this.htMetricSelect) this.setMultiSelectValues(this.htMetricSelect, []);
             
-            this.setMultiSelectValues(this.htYearSelect, [year]);
-            this.setMultiSelectValues(this.htMonthSelect, [month]);
-            
-            this.updateHTDashboardView([year], [month]);
+            this.updateHTDashboardView([], []);
             this.htTableSearch.value = "";
         }
     },
     
-    updateHTDashboardView: function(year, month) {
-        const filteredData = DataProcessor.getHTPowerData(year, month);
-        
-        const kpis = DataProcessor.calculateKPIs(filteredData);
-        
-        let maxUnits = 0;
-        let avgUnits = 0;
-        if (kpis.totalRecords > 0) {
-            maxUnits = Math.max(...filteredData.map(r => r.units || 0));
-            avgUnits = kpis.totalUnits / kpis.totalRecords;
-        }
-
-        this.animateValue(this.kpiHtTotalRecords, 0, kpis.totalRecords, 800, val => val.toLocaleString('en-IN'));
-        this.animateValue(this.kpiHtAvgUnits, 0, avgUnits, 1000, val => DataProcessor.formatCurrency(val));
-        this.animateValue(this.kpiHtMaxUnits, 0, maxUnits, 1000, val => DataProcessor.formatCurrency(val));
-        this.animateValue(this.kpiHtTotalUnits, 0, kpis.totalUnits, 1000, val => DataProcessor.formatCurrency(val));
-        
-        // Update HT Table
-        this.htDataTableBody.innerHTML = '';
-        if (filteredData.length === 0) {
-            this.htTableEmptyState.classList.remove('hidden');
-            this.htDataTableBody.parentElement.style.display = 'none';
-        } else {
-            this.htTableEmptyState.classList.add('hidden');
-            this.htDataTableBody.parentElement.style.display = 'table';
-            filteredData.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${DataProcessor.formatMonthName(row.monthYear)}</td>
-                    <td>${row.source}</td>
-                    <td>${row.category}</td>
-                    <td>${DataProcessor.formatCurrency(row.units)}</td>
-                `;
-                this.htDataTableBody.appendChild(tr);
-            });
+    updateHTDashboardView: function(years, months, metricKeys = null, metricNames = null) {
+        if (!metricKeys) {
+            metricKeys = this.getMultiSelectValues(this.htMetricSelect);
+            metricNames = this.getMultiSelectNames(this.htMetricSelect);
         }
         
+        if (years.length === 0 || months.length === 0 || metricKeys.length === 0) {
+            this.updateKPIs([], metricNames, this.htDynamicKpiContainer);
+            this.updateTable([], this.htDataTableBody, this.htTableEmptyState, "", metricKeys, metricNames);
+            document.getElementById('ht-pie-chart-card').style.display = 'none';
+            ChartManager.createMonthlyTrendChart({}, 'chart-ht-monthly-trend', 'htMonthlyTrend', metricNames);
+            return;
+        }
+        
+        const filteredData = DataProcessor.getHTPowerData(years, months);
+        
+        // 1. Dynamic KPI Cards
+        this.updateKPIs(filteredData, metricNames, this.htDynamicKpiContainer);
+        
+        // 2. Data Table
+        this.updateTable(filteredData, this.htDataTableBody, this.htTableEmptyState, "", metricKeys, metricNames);
+        
+        // 3. Charts
         const chartData = DataProcessor.getChartData(filteredData);
-        
         if (Object.keys(chartData.monthlyTrend).length > 0) {
-            // Re-use monthly trend but map to units instead of value (since value is 0 for HT)
+            // Because our chart manager expects an object of metrics per month:
+            // But we can just pass the same trendData structure.
+            // For HT Power, `chartData.monthlyTrend` doesn't know about these specific metrics, it just averages total value etc.
+            // Let's build a custom trend data that maps exactly to metricKeys.
+            
             const trendData = {};
             filteredData.forEach(row => {
-                if (!trendData[row.monthYear]) trendData[row.monthYear] = { units: 0 };
-                trendData[row.monthYear].units += (row.units || 0);
+                if (!trendData[row.monthYear]) trendData[row.monthYear] = {};
+                
+                metricNames.forEach(metricName => {
+                    if (!trendData[row.monthYear][metricName]) trendData[row.monthYear][metricName] = 0;
+                    trendData[row.monthYear][metricName] += (row.metrics ? (row.metrics[metricName] || 0) : 0);
+                });
             });
-            ChartManager.createMonthlyTrendChart(trendData, 'chart-ht-monthly-trend', 'htMonthlyTrend', ['Total Units (KWH)']);
+            ChartManager.createMonthlyTrendChart(trendData, 'chart-ht-monthly-trend', 'htMonthlyTrend', metricNames);
         }
         
         const pieCard = document.getElementById('ht-pie-chart-card');
         if (Object.keys(chartData.sourceDist).length > 0) {
             pieCard.style.display = 'block';
             ChartManager.createCategoryDistChart(chartData.sourceDist, 'chart-ht-category-dist', 'htCategoryDist', 'Total Units (KWH)');
-            pieCard.parentElement.style.gridTemplateColumns = '2fr 1fr';
+            pieCard.parentElement.classList.add('has-pie');
         } else {
             pieCard.style.display = 'none';
-            pieCard.parentElement.style.gridTemplateColumns = '1fr';
+            pieCard.parentElement.classList.remove('has-pie');
         }
     },
     
@@ -703,27 +618,138 @@ const Dashboard = {
         window.requestAnimationFrame(step);
     },
 
-    updateKPIs: function(kpis) {
-        this.animateValue(this.kpiTotalRecords, 0, kpis.totalRecords, 800, val => val.toLocaleString('en-IN'));
-        this.animateValue(this.kpiTotalValue, 0, kpis.totalValue, 1000, val => '₹' + DataProcessor.formatCurrency(val));
-        this.animateValue(this.kpiAvgValue, 0, kpis.avgValue, 1000, val => '₹' + DataProcessor.formatCurrency(val));
-        this.animateValue(this.kpiCategories, 0, kpis.totalUnits, 1000, val => DataProcessor.formatCurrency(val));
+    updateKPIs: function(filteredData, metricNames, targetContainer = null) {
+        const container = targetContainer || document.getElementById('dynamic-kpi-container');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (!filteredData || filteredData.length === 0) {
+            container.innerHTML = '<div class="kpi-card" style="grid-column: 1 / -1; text-align: center;">No data available for the selected filters.</div>';
+            return;
+        }
+        
+        const monthlyGroups = DataProcessor.calculateDetailedKPIsByMonth(filteredData);
+        
+        // Normalize selected metric names for robust matching
+        let normalizedSelected = [];
+        if (metricNames && !metricNames.includes('All Metrics')) {
+            normalizedSelected = metricNames.map(m => m.toLowerCase().replace(/[^a-z0-9]/g, ''));
+        }
+        
+        // Sort groups chronologically by month, then by unit
+        const sortedGroups = Object.keys(monthlyGroups).sort((a, b) => {
+            const [monthA, unitA] = a.split('|');
+            const [monthB, unitB] = b.split('|');
+            const dateA = new Date(monthA);
+            const dateB = new Date(monthB);
+            if (dateA.getTime() !== dateB.getTime()) {
+                return dateA - dateB;
+            }
+            return unitA.localeCompare(unitB);
+        });
+        
+        sortedGroups.forEach((groupKey, groupIndex) => {
+            const data = monthlyGroups[groupKey];
+            const [monthStr, unitName] = groupKey.split('|');
+            const monthName = DataProcessor.formatMonthName(monthStr);
+            
+            // Create group container
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'month-group';
+            groupDiv.style.animationDelay = `${groupIndex * 0.1}s`;
+            
+            // Create title
+            const titleEl = document.createElement('h3');
+            titleEl.className = 'month-group-title';
+            titleEl.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+                </svg>
+                Data for ${monthName} — ${unitName}
+            `;
+            groupDiv.appendChild(titleEl);
+            
+            // Create grid
+            const gridDiv = document.createElement('div');
+            gridDiv.className = 'kpi-section';
+            
+            // Build cards for all 17 metrics
+            Object.entries(data).forEach(([key, value], index) => {
+                // If specific metrics are selected, filter out the rest
+                if (normalizedSelected.length > 0) {
+                    const normKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    // Special fallbacks due to slight naming mismatches between dashboard dropdown & dataProcessor keys
+                    const isMatch = normalizedSelected.includes(normKey) || 
+                                    (normKey.includes('iex') && normalizedSelected.some(n => n.includes('iex'))) ||
+                                    (normKey.includes('ebunits') && normalizedSelected.some(n => n.includes('ebunits'))) ||
+                                    (normKey.includes('wheeling') && normalizedSelected.some(n => n.includes('wheeling')));
+                    if (!isMatch) return;
+                }
+                
+                const isRupees = key.includes('(Rs.)') || key.includes('Rate');
+                const isRate = key.toLowerCase().includes('rate');
+                
+                // Formatting logic
+                let displayVal = '';
+                if (isRate) {
+                    displayVal = value.toFixed(2);
+                } else if (value >= 1000 || value < -1000) {
+                    displayVal = DataProcessor.formatCurrency(value);
+                } else {
+                    // Small whole numbers or decimals
+                    displayVal = Number.isInteger(value) ? value : value.toFixed(2);
+                }
+                
+                const prefix = (isRupees && value !== 0) ? '₹' : '';
+                
+                const card = document.createElement('div');
+                card.className = 'kpi-card';
+                // Remove individual animation delays to let the grid animate as a group
+                card.innerHTML = `
+                    <div class="kpi-header">
+                        <div class="kpi-title">${key}</div>
+                        <div class="kpi-icon" style="opacity: 0.5;">
+                            <!-- Generic metric icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value">${prefix}${displayVal}</div>
+                `;
+                
+                gridDiv.appendChild(card);
+            });
+            
+            groupDiv.appendChild(gridDiv);
+            container.appendChild(groupDiv);
+        });
     },
     
     updateTable: function(data, tbodyEl, emptyStateEl, searchTerm = "", metricKeys = ["total_units"], metricNames = ["Total Units (KWH)"]) {
         tbodyEl.innerHTML = '';
         
         // Update Table Header if it's the main dashboard table
-        if (tbodyEl.id === 'data-table-body') {
+        // Update Table Header if it's a dynamic table
+        if (tbodyEl.id === 'data-table-body' || tbodyEl.id === 'ht-data-table-body') {
             const table = tbodyEl.parentElement;
             if (table && table.tagName === 'TABLE') {
                 const thead = table.querySelector('thead tr');
                 if (thead) {
-                    thead.innerHTML = `
-                        <th>Date/Month</th>
-                        <th>Category / Unit</th>
-                        <th>Value (Rs.)</th>
-                    `;
+                    if (tbodyEl.id === 'data-table-body') {
+                        thead.innerHTML = `
+                            <th>Date/Month</th>
+                            <th>Category / Unit</th>
+                            <th>Value (Rs.)</th>
+                        `;
+                    } else {
+                        thead.innerHTML = `
+                            <th>Date/Month</th>
+                            <th>Source / Unit</th>
+                            <th>Category</th>
+                        `;
+                    }
                     metricNames.forEach(name => {
                         thead.innerHTML += `<th>${name}</th>`;
                     });
@@ -759,22 +785,25 @@ const Dashboard = {
                         <td>${row.category}</td>
                         <td>${row.value > 0 ? '₹' + DataProcessor.formatCurrency(row.value) : '-'}</td>
                     `;
-                    metricKeys.forEach(key => {
-                        const metricVal = row.metrics ? (row.metrics[key] || 0) : (row.units || 0);
-                        const isRupees = key.includes('value') || key.includes('rate');
+                    metricNames.forEach(name => {
+                        const metricVal = row.metrics ? (row.metrics[name] || 0) : (row.units || 0);
+                        const isRupees = name.toLowerCase().includes('(rs.)') || name.toLowerCase().includes('rate');
                         const prefix = isRupees && metricVal > 0 ? '₹' : '';
                         html += `<td>${prefix}${DataProcessor.formatCurrency(metricVal)}</td>`;
                     });
                     tr.innerHTML = html;
-                } else if (tbodyEl.id === 'power-data-table-body') {
-                    // Power Dashboard Table
-                    tr.innerHTML = `
+                } else if (tbodyEl.id === 'ht-data-table-body') {
+                    // HT Power Dashboard Table (Dynamic)
+                    let html = `
                         <td>${DataProcessor.formatMonthName(row.monthYear)}</td>
                         <td>${row.source}</td>
                         <td>${row.category}</td>
-                        <td>${row.value > 0 ? '₹' + DataProcessor.formatCurrency(row.value) : '-'}</td>
-                        <td>${DataProcessor.formatCurrency(row.units)}</td>
                     `;
+                    metricNames.forEach(name => {
+                        const metricVal = row.metrics ? (row.metrics[name] || 0) : (row.units || 0);
+                        html += `<td>${DataProcessor.formatCurrency(metricVal)}</td>`;
+                    });
+                    tr.innerHTML = html;
                 }
                 
                 tbodyEl.appendChild(tr);
@@ -788,44 +817,12 @@ const Dashboard = {
         this.updateTable(filteredData, this.dataTableBody, this.tableEmptyState, term);
     },
     
-    handlePowerSearch: function(term) {
-        if (!AppState.powerSelectedYear && !AppState.powerSelectedMonthOnly && AppState.processedData.length === 0) return;
-        const filteredData = DataProcessor.getPowerConsumptionData(AppState.powerSelectedYear, AppState.powerSelectedMonthOnly);
-        this.updateTable(filteredData, this.powerDataTableBody, this.powerTableEmptyState, term);
-    },
+
     
     handleHtSearch: function(term) {
         if (!AppState.htSelectedYear && !AppState.htSelectedMonthOnly && AppState.processedData.length === 0) return;
         const filteredData = DataProcessor.getHTPowerData(AppState.htSelectedYear, AppState.htSelectedMonthOnly);
-        
-        let displayData = filteredData;
-        if (term) {
-            const t = term.toLowerCase();
-            displayData = filteredData.filter(row => 
-                (row.category || '').toLowerCase().includes(t) ||
-                (row.source || '').toLowerCase().includes(t) ||
-                (row.monthYear || '').toLowerCase().includes(t)
-            );
-        }
-        
-        this.htDataTableBody.innerHTML = '';
-        if (displayData.length === 0) {
-            this.htTableEmptyState.classList.remove('hidden');
-            this.htDataTableBody.parentElement.style.display = 'none';
-        } else {
-            this.htTableEmptyState.classList.add('hidden');
-            this.htDataTableBody.parentElement.style.display = 'table';
-            displayData.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${DataProcessor.formatMonthName(row.monthYear)}</td>
-                    <td>${row.source}</td>
-                    <td>${row.category}</td>
-                    <td>${DataProcessor.formatCurrency(row.units)}</td>
-                `;
-                this.htDataTableBody.appendChild(tr);
-            });
-        }
+        this.updateTable(filteredData, this.htDataTableBody, this.htTableEmptyState, term, AppState.htMetricKeys, AppState.htMetricNames);
     },
     
     exportToCSV: function() {

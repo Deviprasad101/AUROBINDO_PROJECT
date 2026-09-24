@@ -49,11 +49,11 @@ const ChartManager = {
             this.createCategoryDistChart(chartData.sourceDist);
             
             // Adjust grid layout for charts if both are showing
-            document.querySelector('.charts-section').style.gridTemplateColumns = '2fr 1fr';
+            document.querySelector('.charts-section').classList.add('has-pie');
         } else {
             // Hide pie chart if filtering by a single unit
             pieCard.style.display = 'none';
-            document.querySelector('.charts-section').style.gridTemplateColumns = '1fr';
+            document.querySelector('.charts-section').classList.remove('has-pie');
         }
     },
     
