@@ -697,12 +697,8 @@ const Dashboard = {
                 // If specific metrics are selected, filter out the rest
                 if (normalizedSelected.length > 0) {
                     const normKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    // Special fallbacks due to slight naming mismatches between dashboard dropdown & dataProcessor keys
-                    const isMatch = normalizedSelected.includes(normKey) || 
-                                    (normKey.includes('iex') && normalizedSelected.some(n => n.includes('iex'))) ||
-                                    (normKey.includes('ebunits') && normalizedSelected.some(n => n.includes('ebunits'))) ||
-                                    (normKey.includes('wheeling') && normalizedSelected.some(n => n.includes('wheeling')));
-                    if (!isMatch) return;
+                    // Strict match only. Removed fuzzy fallbacks as requested by user.
+                    if (!normalizedSelected.includes(normKey)) return;
                 }
                 
                 const isRupees = key.includes('(Rs.)') || key.includes('Rate');
