@@ -290,7 +290,14 @@ const ChartManager = {
             this.colors.secondary,
             this.colors.success,
             this.colors.warning,
-            this.colors.tertiary
+            this.colors.tertiary,
+            '#ef4444', // red
+            '#14b8a6', // teal
+            '#f97316', // orange
+            '#ec4899', // pink
+            '#84cc16', // lime
+            '#06b6d4', // cyan
+            '#8b5cf6'  // violet
         ];
         
         AppState.charts[chartKey] = new Chart(ctx, {

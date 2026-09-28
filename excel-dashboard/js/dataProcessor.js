@@ -370,9 +370,12 @@ const DataProcessor = {
     /**
      * Aggregate data for charts
      */
-    getChartData: function(filteredData, metricKeys = ['total_units']) {
+    getChartData: function(filteredData, metricKeys = ['total_units'], filterUnits = []) {
         // 1. Category Distribution (Pie) based on first metric
         const sourceDist = {};
+        
+        // (We don't need to force-initialize 0 values when grouping by category because categories are derived from actual data rows)
+        
         const primaryMetric = metricKeys[0];
         
         // 2. Monthly Trend (Filtered months) - Bar Chart (multiple metrics)

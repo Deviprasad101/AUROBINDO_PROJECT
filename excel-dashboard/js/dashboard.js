@@ -469,7 +469,9 @@ const Dashboard = {
             // Hide charts
             document.getElementById('chart-units-card').style.display = 'none';
             document.getElementById('chart-rupees-card').style.display = 'none';
-            document.getElementById('pie-chart-card').style.display = 'none';
+            if (document.getElementById('pie-chart-card')) {
+                document.getElementById('pie-chart-card').style.display = 'none';
+            }
             
             return;
         }
@@ -492,7 +494,7 @@ const Dashboard = {
         const unitsCard = document.getElementById('chart-units-card');
         if (unitMetrics.length > 0) {
             unitsCard.style.display = 'block';
-            const unitChartData = DataProcessor.getChartData(filteredData, unitMetrics);
+            const unitChartData = DataProcessor.getChartData(filteredData, unitMetrics, units);
             if (Object.keys(unitChartData.monthlyTrend).length > 0) {
                 ChartManager.createMonthlyTrendChart(unitChartData.monthlyTrend, 'wrapper-monthly-trend-units', 'monthlyTrendUnits', unitMetrics);
             }
@@ -504,7 +506,7 @@ const Dashboard = {
         const rupeesCard = document.getElementById('chart-rupees-card');
         if (rupeesMetrics.length > 0) {
             rupeesCard.style.display = 'block';
-            const rupeesChartData = DataProcessor.getChartData(filteredData, rupeesMetrics);
+            const rupeesChartData = DataProcessor.getChartData(filteredData, rupeesMetrics, units);
             if (Object.keys(rupeesChartData.monthlyTrend).length > 0) {
                 ChartManager.createMonthlyTrendChart(rupeesChartData.monthlyTrend, 'wrapper-monthly-trend-rupees', 'monthlyTrendRupees', rupeesMetrics);
             }
@@ -512,22 +514,28 @@ const Dashboard = {
             rupeesCard.style.display = 'none';
         }
         
-        // Use the first metric for Pie Chart Distribution
-        const pieCard = document.getElementById('pie-chart-card');
-        if (units && (units.includes('all') || units.length > 1)) {
-            const allChartData = DataProcessor.getChartData(filteredData, [metricNames[0]]);
-            if (Object.keys(allChartData.sourceDist).length > 0) {
-                pieCard.style.display = 'block';
-                ChartManager.createCategoryDistChart(allChartData.sourceDist, 'chart-category-dist', 'categoryDist', metricNames[0]);
-                pieCard.parentElement.classList.add('has-pie');
-            } else {
-                pieCard.style.display = 'none';
-                pieCard.parentElement.classList.remove('has-pie');
+        // Use the first metric for Pie Chart Distribution (Only if NOT editor, per user request)
+        const role = localStorage.getItem('userRole');
+        if (role === 'user' || role === 'admin') {
+            const pieCard = document.getElementById('pie-chart-card');
+            if (pieCard) {
+                if (units && units.length > 0) {
+                    const allChartData = DataProcessor.getChartData(filteredData, [metricNames[0]], units);
+                    if (Object.keys(allChartData.sourceDist).length > 0) {
+                        pieCard.style.display = 'block';
+                        ChartManager.createCategoryDistChart(allChartData.sourceDist, 'chart-category-dist', 'categoryDist', metricNames[0]);
+                        pieCard.parentElement.classList.add('has-pie');
+                    } else {
+                        pieCard.style.display = 'none';
+                        pieCard.parentElement.classList.remove('has-pie');
+                    }
+                } else {
+                    pieCard.style.display = 'none';
+                    pieCard.parentElement.classList.remove('has-pie');
+                }
             }
-        } else {
-            pieCard.style.display = 'none';
-            pieCard.parentElement.classList.remove('has-pie');
         }
+
     },
     
     // --- HT DASHBOARD LOGIC (Tab 3) ---

@@ -93,11 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
                   localStorage.removeItem('assignedUnits');
               }
               if (data.role === 'admin') {
-                  window.location.href = '/admin_dashboard.html';
+                  window.location.href = '/excel-dashboard/index.html';
               } else if (data.role === 'editor') {
-                  window.location.href = '/excel-dashboard/dashboard.html';
+                  window.location.href = '/excel-dashboard/index.html';
               } else {
-                  window.location.href = '/excel-dashboard/dashboard.html';
+                  window.location.href = '/excel-dashboard/index.html';
               }
           } else {
               errorDiv.innerText = data.error || 'Login failed';

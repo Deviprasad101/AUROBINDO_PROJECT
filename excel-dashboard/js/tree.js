@@ -175,10 +175,6 @@ function updateContentArea(unitName) {
                             <span class="metric-label">Total Units</span>
                             <span class="metric-value">5</span>
                         </div>
-                        <div class="metric">
-                            <span class="metric-label">System Status</span>
-                            <span class="metric-value" style="color: #10b981;">Online</span>
-                        </div>
                     </div>
                 </div>
             `;
@@ -271,7 +267,7 @@ function renderUnitChart(unitName, canvasId) {
             maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
-                tooltip: { mode: 'index', intersect: false }
+                tooltip: { mode: 'nearest', intersect: true }
             },
             scales: {
                 y: {
