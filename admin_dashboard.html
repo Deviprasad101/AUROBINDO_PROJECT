@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-hover: #2980b9;
+            --secondary: #2ecc71;
+            --secondary-hover: #27ae60;
+            --danger: #e74c3c;
+            --danger-hover: #c0392b;
+            --bg: #f4f7f6;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-dark: #2c3e50;
+            --text-muted: #7f8c8d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        /* ----- Modern Header ----- */
+        header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo i {
+            color: var(--primary);
+            font-size: 28px;
+            filter: drop-shadow(0 2px 4px rgba(52, 152, 219, 0.3));
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            padding: 10px 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+            background: rgba(52, 152, 219, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-links a.active {
+            color: var(--primary);
+            background: rgba(52, 152, 219, 0.1);
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+        }
+
+        .logout-btn:hover {
+            background: var(--danger-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        /* ----- Dashboard Content ----- */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 30px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h3 {
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 15px;
+        }
+
+        .card h3 i {
+            color: var(--primary);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid transparent;
+            background: #f8f9fa;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: var(--text-dark);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th, td {
+            padding: 16px 20px;
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fa;
+            color: var(--text-dark);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+        td {
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            color: #576574;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.005);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            border-radius: 12px;
+        }
+
+        /* Role Badges */
+        .role-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .role-badge i {
+            font-size: 10px;
+        }
+
+        .role-admin { background: rgba(155, 89, 182, 0.15); color: #8e44ad; }
+        .role-editor { background: rgba(230, 126, 34, 0.15); color: #d35400; }
+        .role-user { background: rgba(52, 152, 219, 0.15); color: #2980b9; }
+
+        /* Message styling */
+        .alert {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 10px;
+            padding: 12px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: rgba(46, 204, 113, 0.15);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.2);
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.15);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+            .header-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Modern Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-shield-halved"></i> Admin Portal
+            </div>
+            <div class="nav-links">
+                <a href="/admin_dashboard.html" class="active"><i class="fas fa-grip"></i> Admin Dashboard</a>
+                <!-- Link to all other accessible pages (Excel Dashboard) -->
+                <a href="/excel-dashboard/dashboard.html"><i class="fas fa-chart-pie"></i> Excel Dashboard</a>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <!-- Left Column: Create Editor -->
+        <div class="card form-card">
+            <h3><i class="fas fa-user-plus"></i> Create Editor</h3>
+            <form id="createEditorForm">
+                <div class="form-group">
+                    <label for="editorUsername">Username</label>
+                    <input type="text" id="editorUsername" placeholder="Enter unique username" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="editorPassword">Password</label>
+                    <input type="password" id="editorPassword" placeholder="Enter secure password" required>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-check"></i> Create Account
+                </button>
+            </form>
+            <div id="editorMsg" class="alert alert-success"></div>
+            <div id="editorError" class="alert alert-error"></div>
+        </div>
+
+        <!-- Right Column: User List -->
+        <div class="card table-card">
+            <h3><i class="fas fa-users-gear"></i> System Users</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- Users populated via JS -->
+                        <tr><td colspan="3" style="text-align:center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary);"></i>
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        async function fetchUsers() {
+            try {
+                const res = await fetch('http://localhost:3000/api/users');
+                const users = await res.json();
+                
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = '';
+                
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    
+                    let roleClass = 'role-user';
+                    let iconClass = 'fa-user';
+                    
+                    if (user.role === 'admin') {
+                        roleClass = 'role-admin';
+                        iconClass = 'fa-shield-halved';
+                    } else if (user.role === 'editor') {
+                        roleClass = 'role-editor';
+                        iconClass = 'fa-pen-to-square';
+                    }
+                    
+                    tr.innerHTML = `
+                        <td style="color: #95a5a6; font-weight: 500;">#${user.id}</td>
+                        <td style="font-weight: 600; color: #2c3e50;">${user.username}</td>
+                        <td><span class="role-badge ${roleClass}"><i class="fas ${iconClass}"></i> ${user.role}</span></td>
+                    `;
+                    
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error('Failed to fetch users', err);
+                document.getElementById('userTableBody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#e74c3c;"><i class="fas fa-exclamation-triangle"></i> Failed to load users</td></tr>';
+            }
+        }
+
+        document.getElementById('createEditorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const usernameInput = document.getElementById('editorUsername').value;
+            const passwordInput = document.getElementById('editorPassword').value;
+            const msgDiv = document.getElementById('editorMsg');
+            const errorDiv = document.getElementById('editorError');
+            
+            msgDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('http://localhost:3000/api/create-editor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                    msgDiv.style.display = 'block';
+                    document.getElementById('editorUsername').value = '';
+                    document.getElementById('editorPassword').value = '';
+                    fetchUsers(); // Refresh the table
+                    
+                    // Hide success message after 4 seconds
+                    setTimeout(() => {
+                        msgDiv.style.display = 'none';
+                    }, 4000);
+                } else {
+                    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.error || 'Failed to create editor'}`;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.innerHTML = `<i class="fas fa-server"></i> Server error`;
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        function logout() {
+            // Add a subtle exit animation before redirecting
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.4s ease';
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 400);
+        }
+
+        // Initialize
+        fetchUsers();
+    </script>
+</body>
+</html>

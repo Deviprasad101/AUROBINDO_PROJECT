@@ -10,5 +10,5 @@ echo      http://192.168.1.13:8080
 echo.
 echo DO NOT close this black window while you are using the dashboard!
 echo.
-python -m http.server 8080
+python -m http.server 8080 
 pause

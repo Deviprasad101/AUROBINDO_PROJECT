@@ -30,6 +30,12 @@
                 </div>
             </div>
             <div class="header-actions" style="display: flex; gap: 12px;">
+                <button id="backToPortalBtn" onclick="window.location.href='../admin_dashboard.html'" class="btn btn-secondary" style="display: flex; align-items: center; gap: 8px; background: #f8f9fa; border: 1px solid #ddd; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                    </svg>
+                    Back to Portal
+                </button>
                 <button onclick="window.location.href='index.html'" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
@@ -41,6 +47,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
                     Export Data
+                </button>
+                <button onclick="logoutUser()" class="btn btn-secondary" style="display: flex; align-items: center; gap: 8px; background: #ffeaa7; border: 1px solid #f1c40f; color: #d35400; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                    </svg>
+                    Logout
                 </button>
             </div>
         </header>
@@ -402,6 +414,20 @@
     </div>
 
     <!-- Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const role = localStorage.getItem('userRole');
+            if (role !== 'admin') {
+                const backBtn = document.getElementById('backToPortalBtn');
+                if (backBtn) backBtn.style.display = 'none';
+            }
+        });
+
+        function logoutUser() {
+            localStorage.removeItem('userRole');
+            window.location.href = '../login.html';
+        }
+    </script>
     <script src="js/app.js?v=18"></script>
     <script src="js/excelReader.js?v=18"></script>
     <script src="js/dataProcessor.js?v=18"></script>

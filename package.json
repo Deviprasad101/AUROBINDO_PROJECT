@@ -1,0 +1,25 @@
+{
+  "name": "aurobindo_project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Deviprasad101/AUROBINDO_PROJECT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Deviprasad101/AUROBINDO_PROJECT/issues"
+  },
+  "homepage": "https://github.com/Deviprasad101/AUROBINDO_PROJECT#readme",
+  "dependencies": {
+    "body-parser": "^2.3.0",
+    "express": "^5.2.1",
+    "sqlite3": "^6.0.1"
+  }
+}
