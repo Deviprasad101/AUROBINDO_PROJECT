@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Analysis - Aurobindo</title>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="vendor/chart.umd.js"></script>
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/tree.css">
+    <link rel="stylesheet" href="css/energyDashboard.css">
+    <style>
+        .ea-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px 32px;
+            width: 100%;
+        }
+        .ea-header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            background: #fff;
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .ea-unit-select {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-family: inherit;
+            font-size: 1rem;
+            color: #1e293b;
+            min-width: 250px;
+            cursor: pointer;
+            background-color: #fff;
+        }
+        .ea-unit-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <i class="fa-solid fa-leaf"></i>
+            <h1>Aurobindo Pharma - Energy Analysis</h1>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="index.html" class="home-btn">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back to Tree View
+            </a>
+        </div>
+    </header>
+
+    <div class="ea-container">
+        <div class="ea-header-controls">
+            <div>
+                <h2 style="margin: 0; font-size: 1.25rem; color: #1e293b;">Energy Consumption & Cost Analysis</h2>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.9rem;">Select a unit from the dropdown to view its detailed energy breakdown.</p>
+            </div>
+            <div>
+                <select id="unit-selector" class="ea-unit-select">
+                    <option value="">-- Select Unit --</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="ed-mount" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); min-height: 500px;">
+            <div class="ed-empty">
+                <i class="fa-solid fa-arrow-pointer" style="font-size:2rem;margin-bottom:12px;opacity:.4;"></i>
+                <p>Please select a unit from the dropdown above.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data & Logic -->
+    <script src="js/realData.js"></script>
+    <script src="js/energyDashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const selector = document.getElementById('unit-selector');
+            
+            // Populate dropdown with all units from the tree
+            const defaultOption = document.createElement('option');
+            defaultOption.value = 'ALL_UNITS';
+            defaultOption.textContent = 'All Units (Enterprise Overview)';
+            selector.appendChild(defaultOption);
+
+            const allTreeUnits = [
+                "U-XV",
+                "HCL-iV",
+                "Unit-VII",
+                "UNITS APL HC-01",
+                "UNITS APL HC-03",
+                "Unit XII",
+                "Unit-III"
+            ];
+
+            allTreeUnits.forEach(unitName => {
+                const option = document.createElement('option');
+                option.value = unitName;
+                option.textContent = unitName;
+                selector.appendChild(option);
+            });
+
+            // Handle selection change
+            selector.addEventListener('change', (e) => {
+                const unit = e.target.value;
+                const mount = document.getElementById('ed-mount');
+                if (!unit) {
+                    if (window.EnergyDashboard) window.EnergyDashboard.destroyAllCharts();
+                    mount.innerHTML = '<div class="ed-empty"><i class="fa-solid fa-arrow-pointer" style="font-size:2rem;margin-bottom:12px;opacity:.4;"></i><p>Please select a unit from the dropdown above.</p></div>';
+                    return;
+                }
+                if (window.EnergyDashboard) {
+                    window.EnergyDashboard.render(unit, 'ed-mount');
+                }
+            });
+            
+            // Auto-select ALL_UNITS by default
+            selector.value = 'ALL_UNITS';
+            selector.dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>
