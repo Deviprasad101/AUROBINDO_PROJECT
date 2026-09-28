@@ -25,7 +25,10 @@
                     </svg>
                 </div>
                 <div>
-                    <h1>Excel Analytics Dashboard</h1>
+                    <h1 style="display: flex; align-items: center; gap: 10px;">
+                        Excel Analytics Dashboard
+                        <span id="user-role-badge" style="font-size: 12px; padding: 4px 10px; border-radius: 12px; background: #3498db; color: white; text-transform: uppercase; letter-spacing: 1px;"></span>
+                    </h1>
                     <p class="subtitle">Monthly Performance Analysis</p>
                 </div>
             </div>
@@ -417,6 +420,16 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const role = localStorage.getItem('userRole');
+            
+            // Set Badge
+            const badge = document.getElementById('user-role-badge');
+            if (badge && role) {
+                badge.innerText = role;
+                if(role === 'admin') badge.style.background = '#e74c3c';
+                else if(role === 'editor') badge.style.background = '#2ecc71';
+                else badge.style.background = '#3498db';
+            }
+
             if (role !== 'admin') {
                 const backBtn = document.getElementById('backToPortalBtn');
                 if (backBtn) backBtn.style.display = 'none';

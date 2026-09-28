@@ -368,6 +368,19 @@
                     <label for="editorPassword">Password</label>
                     <input type="password" id="editorPassword" placeholder="Enter secure password" required>
                 </div>
+                <div class="form-group">
+                    <label>Assign Units</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8f9fa; padding: 18px; border-radius: 12px; border: 1px solid #e9ecef; margin-top: 5px;">
+                        <label style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; color: #34495e; cursor: pointer; transition: color 0.2s;"><input type="checkbox" name="unitCheckbox" value="HCL-IV" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary);"> HCL-IV</label>
+                        <label style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; color: #34495e; cursor: pointer; transition: color 0.2s;"><input type="checkbox" name="unitCheckbox" value="U-XV" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary);"> U-XV</label>
+                        <label style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; color: #34495e; cursor: pointer; transition: color 0.2s;"><input type="checkbox" name="unitCheckbox" value="UNIT XII" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary);"> UNIT XII</label>
+                        <label style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; color: #34495e; cursor: pointer; transition: color 0.2s;"><input type="checkbox" name="unitCheckbox" value="UNIT-III" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary);"> UNIT-III</label>
+                        <label style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; color: #34495e; cursor: pointer; transition: color 0.2s;"><input type="checkbox" name="unitCheckbox" value="UNIT-VII" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary);"> UNIT-VII</label>
+                        <label style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; color: #34495e; cursor: pointer; transition: color 0.2s;"><input type="checkbox" name="unitCheckbox" value="HT Power (Merged)" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary);"> HT Power (Merged)</label>
+                        <label style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; color: #34495e; cursor: pointer; transition: color 0.2s; grid-column: span 2;"><input type="checkbox" name="unitCheckbox" value="UNITS APL HC-01" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary);"> UNITS APL HC-01</label>
+                        <label style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; color: #34495e; cursor: pointer; transition: color 0.2s; grid-column: span 2;"><input type="checkbox" name="unitCheckbox" value="UNITS APL HC-03" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary);"> UNITS APL HC-03</label>
+                    </div>
+                </div>
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-check"></i> Create Account
                 </button>
@@ -386,6 +399,7 @@
                             <th>ID</th>
                             <th>Username</th>
                             <th>Role</th>
+                            <th style="text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="userTableBody">
@@ -422,18 +436,45 @@
                         roleClass = 'role-editor';
                         iconClass = 'fa-pen-to-square';
                     }
+                    let deleteBtnHTML = '';
+                    if (user.username !== 'password') { // Don't allow deleting the default admin
+                        deleteBtnHTML = `<button onclick="deleteUser(${user.id}, '${user.username}')" style="background: none; border: none; color: #e74c3c; cursor: pointer; padding: 5px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="Delete User"><i class="fas fa-trash"></i></button>`;
+                    }
                     
                     tr.innerHTML = `
                         <td style="color: #95a5a6; font-weight: 500;">#${user.id}</td>
                         <td style="font-weight: 600; color: #2c3e50;">${user.username}</td>
                         <td><span class="role-badge ${roleClass}"><i class="fas ${iconClass}"></i> ${user.role}</span></td>
+                        <td style="text-align: center;">${deleteBtnHTML}</td>
                     `;
                     
                     tbody.appendChild(tr);
                 });
             } catch (err) {
                 console.error('Failed to fetch users', err);
-                document.getElementById('userTableBody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#e74c3c;"><i class="fas fa-exclamation-triangle"></i> Failed to load users</td></tr>';
+                document.getElementById('userTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center; color:#e74c3c;"><i class="fas fa-exclamation-triangle"></i> Failed to load users</td></tr>';
+            }
+        }
+        
+        async function deleteUser(id, username) {
+            if (!confirm(`Are you sure you want to delete the user "${username}"? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(`http://localhost:3000/api/users/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (res.ok) {
+                    fetchUsers();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to delete user');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server error while deleting user');
             }
         }
 
@@ -441,6 +482,11 @@
             e.preventDefault();
             const usernameInput = document.getElementById('editorUsername').value;
             const passwordInput = document.getElementById('editorPassword').value;
+            
+            // Collect selected units
+            const checkboxes = document.querySelectorAll('input[name="unitCheckbox"]:checked');
+            const assignedUnits = Array.from(checkboxes).map(cb => cb.value).join(',');
+            
             const msgDiv = document.getElementById('editorMsg');
             const errorDiv = document.getElementById('editorError');
             
@@ -451,7 +497,7 @@
                 const res = await fetch('http://localhost:3000/api/create-editor', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput, assigned_units: assignedUnits })
                 });
                 
                 const data = await res.json();
@@ -460,6 +506,7 @@
                     msgDiv.style.display = 'block';
                     document.getElementById('editorUsername').value = '';
                     document.getElementById('editorPassword').value = '';
+                    document.querySelectorAll('input[name="unitCheckbox"]').forEach(cb => cb.checked = false);
                     fetchUsers(); // Refresh the table
                     
                     // Hide success message after 4 seconds

@@ -41,6 +41,11 @@ const db = new sqlite3.Database('database.sqlite', (err) => {
             if (!err) {
                 // Create default admin user if not exists
                 db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('password', 'password', 'admin')`);
+                
+                // Add assigned_units column if it doesn't exist (ignore error if it does)
+                db.run(`ALTER TABLE users ADD COLUMN assigned_units TEXT`, (err) => {
+                    // Ignore errors if column already exists
+                });
             }
         });
     }
@@ -70,7 +75,7 @@ app.post('/login', (req, res) => {
         if (!row) {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
-        res.json({ message: 'Login successful', role: row.role, username: row.username });
+        res.json({ message: 'Login successful', role: row.role, username: row.username, assigned_units: row.assigned_units || '' });
     });
 });
 
@@ -90,8 +95,8 @@ app.post('/api/reset-password', (req, res) => {
 
 // Create Editor Endpoint (for Admin)
 app.post('/api/create-editor', (req, res) => {
-    const { username, password } = req.body;
-    db.run(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`, [username, password, 'editor'], function(err) {
+    const { username, password, assigned_units } = req.body;
+    db.run(`INSERT INTO users (username, password, role, assigned_units) VALUES (?, ?, ?, ?)`, [username, password, 'editor', assigned_units], function(err) {
         if (err) {
             if (err.message.includes('UNIQUE')) {
                 return res.status(400).json({ error: 'Username already exists' });
@@ -102,6 +107,20 @@ app.post('/api/create-editor', (req, res) => {
     });
 });
 
+// Verify Editor Endpoint
+app.post('/api/verify-editor', (req, res) => {
+    const { username, password } = req.body;
+    db.get(`SELECT * FROM users WHERE username = ? AND password = ? AND role = 'editor'`, [username, password], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (!row) {
+            return res.status(401).json({ error: 'Invalid editor credentials' });
+        }
+        res.json({ message: 'Editor verified successfully' });
+    });
+});
+
 // Get Users (for Admin Dashboard)
 app.get('/api/users', (req, res) => {
     db.all(`SELECT id, username, role FROM users`, [], (err, rows) => {
@@ -109,6 +128,21 @@ app.get('/api/users', (req, res) => {
             return res.status(500).json({ error: 'Database error' });
         }
         res.json(rows);
+    });
+});
+
+// Delete User Endpoint
+app.delete('/api/users/:id', (req, res) => {
+    const userId = req.params.id;
+    // Don't allow deleting the default admin account (ID 1 usually, or by username)
+    db.run(`DELETE FROM users WHERE id = ? AND username != 'password'`, [userId], function(err) {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'User not found or cannot delete default admin' });
+        }
+        res.json({ message: 'User deleted successfully' });
     });
 });
 

@@ -379,9 +379,24 @@ const Dashboard = {
         this.populateMultiSelect(this.htMonthSelect, monthOptions, "All Months");
         
         // Populate Unit
-        const unitOptions = Array.from(AppState.availableUnits)
-            .filter(u => u !== 'HT Power (Merged)')
-            .sort().map(u => ({value: u, text: u}));
+        const role = localStorage.getItem('userRole');
+        const assignedUnitsStr = localStorage.getItem('assignedUnits');
+        const assignedUnits = assignedUnitsStr ? assignedUnitsStr.split(',') : [];
+
+        let unitOptions = [];
+        
+        if (role === 'editor' && assignedUnitsStr !== null && assignedUnits.length > 0) {
+            // If editor, ALWAYS show exactly the units assigned by Admin
+            unitOptions = assignedUnits
+                .filter(u => u !== 'HT Power (Merged)') // Exclude HT power from general tab
+                .map(u => ({value: u, text: u}));
+        } else {
+            // For admin/user, show units available in the Excel file
+            unitOptions = Array.from(AppState.availableUnits)
+                .filter(u => u !== 'HT Power (Merged)')
+                .sort().map(u => ({value: u, text: u}));
+        }
+            
         this.populateMultiSelect(this.unitSelect, unitOptions, "All Units");
     },
     
@@ -739,6 +754,9 @@ const Dashboard = {
     updateTable: function(data, tbodyEl, emptyStateEl, searchTerm = "", metricKeys = ["total_units"], metricNames = ["Total Units (KWH)"]) {
         tbodyEl.innerHTML = '';
         
+        const role = localStorage.getItem('userRole');
+        const showAction = role === 'editor' || role === 'admin';
+        
         // Update Table Header if it's the main dashboard table
         // Update Table Header if it's a dynamic table
         if (tbodyEl.id === 'data-table-body' || tbodyEl.id === 'ht-data-table-body') {
@@ -762,11 +780,22 @@ const Dashboard = {
                     metricNames.forEach(name => {
                         thead.innerHTML += `<th>${name}</th>`;
                     });
+                    if (showAction) {
+                        thead.innerHTML += `<th>Action</th>`;
+                    }
                 }
             }
         }
         
         let displayData = data;
+        
+        if (tbodyEl.id === 'data-table-body') {
+            Dashboard.currentGeneralData = displayData;
+            Dashboard.currentGeneralMetrics = metricNames;
+        } else if (tbodyEl.id === 'ht-data-table-body') {
+            Dashboard.currentHTData = displayData;
+            Dashboard.currentHTMetrics = metricNames;
+        }
         
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
@@ -784,7 +813,7 @@ const Dashboard = {
             if (emptyStateEl) emptyStateEl.classList.add('hidden');
             tbodyEl.parentElement.style.display = 'table';
             
-            displayData.forEach(row => {
+            displayData.forEach((row, rowIndex) => {
                 const tr = document.createElement('tr');
                 
                 if (tbodyEl.id === 'data-table-body') {
@@ -800,6 +829,15 @@ const Dashboard = {
                         const prefix = isRupees && metricVal > 0 ? '₹' : '';
                         html += `<td>${prefix}${DataProcessor.formatCurrency(metricVal)}</td>`;
                     });
+                    
+                    if (showAction) {
+                        html += `
+                            <td>
+                                <button class="btn btn-primary" style="padding: 4px 8px; font-size: 0.8em;" onclick="window.Dashboard.promptEditorCredentials(this, ${rowIndex}, '${tbodyEl.id}')">Edit</button>
+                            </td>
+                        `;
+                    }
+                    
                     tr.innerHTML = html;
                 } else if (tbodyEl.id === 'ht-data-table-body') {
                     // HT Power Dashboard Table (Dynamic)
@@ -812,6 +850,15 @@ const Dashboard = {
                         const metricVal = row.metrics ? (row.metrics[name] || 0) : (row.units || 0);
                         html += `<td>${DataProcessor.formatCurrency(metricVal)}</td>`;
                     });
+                    
+                    if (showAction) {
+                        html += `
+                            <td>
+                                <button class="btn btn-primary" style="padding: 4px 8px; font-size: 0.8em;" onclick="window.Dashboard.promptEditorCredentials(this, ${rowIndex}, '${tbodyEl.id}')">Edit</button>
+                            </td>
+                        `;
+                    }
+                    
                     tr.innerHTML = html;
                 }
                 
@@ -882,6 +929,132 @@ const Dashboard = {
         }, 300);
         
         }, 100);
+    },
+
+    promptEditorCredentials: function(btnElement, rowIndex, tbodyId) {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0'; overlay.style.left = '0';
+        overlay.style.width = '100vw'; overlay.style.height = '100vh';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = '9999';
+
+        const modal = document.createElement('div');
+        modal.style.background = '#fff';
+        modal.style.padding = '30px';
+        modal.style.borderRadius = '10px';
+        modal.style.width = '350px';
+        modal.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
+        modal.innerHTML = `
+            <h3 style="margin-top:0; color:#333;">Editor Authentication</h3>
+            <p style="color:#666; font-size:14px; margin-bottom:20px;">Please enter your editor credentials to modify this record.</p>
+            <input type="text" id="editor-username" placeholder="Editor Username" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+            <input type="password" id="editor-password" placeholder="Editor Password" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+            <div style="display:flex; justify-content:space-between;">
+                <button id="editor-cancel" style="padding:10px 15px; border:none; background:#eee; cursor:pointer; border-radius:5px; font-weight:600;">Cancel</button>
+                <button id="editor-verify" style="padding:10px 15px; border:none; background:#4f46e5; color:#fff; cursor:pointer; border-radius:5px; font-weight:600;">Verify & Edit</button>
+            </div>
+        `;
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        document.getElementById('editor-cancel').onclick = () => {
+            document.body.removeChild(overlay);
+        };
+
+        document.getElementById('editor-verify').onclick = async () => {
+            const username = document.getElementById('editor-username').value;
+            const password = document.getElementById('editor-password').value;
+            
+            const btn = document.getElementById('editor-verify');
+            btn.textContent = 'Verifying...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/verify-editor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Credentials verified! You now have access to edit this row.');
+                    document.body.removeChild(overlay);
+                    window.Dashboard.enableRowEditing(btnElement, rowIndex, tbodyId);
+                } else {
+                    alert('Error: ' + result.error);
+                    btn.textContent = 'Verify & Edit';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert('Connection error. Is the server running?');
+                btn.textContent = 'Verify & Edit';
+                btn.disabled = false;
+            }
+        };
+    },
+    
+    enableRowEditing: function(btnElement, rowIndex, tbodyId) {
+        const tr = btnElement.closest('tr');
+        const isHT = tbodyId === 'ht-data-table-body';
+        const rowData = isHT ? Dashboard.currentHTData[rowIndex] : Dashboard.currentGeneralData[rowIndex];
+        const metricNames = isHT ? Dashboard.currentHTMetrics : Dashboard.currentGeneralMetrics;
+        
+        const tds = tr.querySelectorAll('td');
+        
+        if (!isHT) {
+            // Main table column 2 is Value (Rs)
+            const val = rowData.value || 0;
+            tds[2].innerHTML = `<input type="number" step="any" id="edit-val-${tbodyId}-${rowIndex}" value="${val}" style="width: 80px; padding: 4px;">`;
+        }
+        
+        // Metrics start at index 3
+        for (let i = 0; i < metricNames.length; i++) {
+            const tdIdx = i + 3;
+            const mName = metricNames[i];
+            const val = rowData.metrics ? (rowData.metrics[mName] || 0) : 0;
+            tds[tdIdx].innerHTML = `<input type="number" step="any" id="edit-metric-${tbodyId}-${rowIndex}-${i}" value="${val}" style="width: 80px; padding: 4px;">`;
+        }
+        
+        btnElement.innerText = "Save";
+        btnElement.style.background = "#10b981";
+        btnElement.onclick = () => window.Dashboard.saveRowEdit(btnElement, rowIndex, tbodyId, metricNames);
+    },
+    
+    saveRowEdit: function(btnElement, rowIndex, tbodyId, metricNames) {
+        const isHT = tbodyId === 'ht-data-table-body';
+        const rowData = isHT ? Dashboard.currentHTData[rowIndex] : Dashboard.currentGeneralData[rowIndex];
+        
+        if (!isHT) {
+            const valInput = document.getElementById(`edit-val-${tbodyId}-${rowIndex}`);
+            if (valInput) {
+                rowData.value = parseFloat(valInput.value) || 0;
+            }
+        }
+        
+        if (!rowData.metrics) rowData.metrics = {};
+        
+        for (let i = 0; i < metricNames.length; i++) {
+            const mName = metricNames[i];
+            const input = document.getElementById(`edit-metric-${tbodyId}-${rowIndex}-${i}`);
+            if (input) {
+                rowData.metrics[mName] = parseFloat(input.value) || 0;
+            }
+        }
+        
+        alert("Row updated successfully! The charts and KPIs will now refresh with the new data.");
+        
+        // Refresh UI
+        if (isHT) {
+            Dashboard.applyHtFilter();
+        } else {
+            Dashboard.applyFilter();
+        }
     }
 };
 

@@ -87,10 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
           const data = await res.json();
           if (res.ok) {
               localStorage.setItem('userRole', data.role);
+              if (data.assigned_units) {
+                  localStorage.setItem('assignedUnits', data.assigned_units);
+              } else {
+                  localStorage.removeItem('assignedUnits');
+              }
               if (data.role === 'admin') {
                   window.location.href = '/admin_dashboard.html';
               } else if (data.role === 'editor') {
-                  window.location.href = '/editor_dashboard.html';
+                  window.location.href = '/excel-dashboard/dashboard.html';
               } else {
                   window.location.href = '/excel-dashboard/dashboard.html';
               }

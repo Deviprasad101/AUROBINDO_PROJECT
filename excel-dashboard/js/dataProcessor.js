@@ -229,6 +229,10 @@ const DataProcessor = {
      * Get data filtered by year, month and unit
      */
     getFilteredData: function(years = [], months = [], units = []) {
+        const role = localStorage.getItem('userRole');
+        const assignedUnitsStr = localStorage.getItem('assignedUnits');
+        const assignedUnits = assignedUnitsStr ? assignedUnitsStr.split(',') : [];
+
         return AppState.processedData.filter(row => {
             const rowYear = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
@@ -238,7 +242,12 @@ const DataProcessor = {
             const matchUnit = units.includes("all") ? true : (units.length > 0 && units.includes(row.unitName));
             const matchSource = row.unitName !== 'HT Power (Merged)';
             
-            return matchYear && matchMonth && matchUnit && matchSource;
+            let matchAssigned = true;
+            if (role === 'editor' && assignedUnitsStr !== null) {
+                matchAssigned = assignedUnits.includes(row.unitName);
+            }
+            
+            return matchYear && matchMonth && matchUnit && matchSource && matchAssigned;
         });
     },
     
@@ -249,6 +258,10 @@ const DataProcessor = {
      * (Only "HT Power (Merged)")
      */
     getHTPowerData: function(years = [], months = []) {
+        const role = localStorage.getItem('userRole');
+        const assignedUnitsStr = localStorage.getItem('assignedUnits');
+        const assignedUnits = assignedUnitsStr ? assignedUnitsStr.split(',') : [];
+
         return AppState.processedData.filter(row => {
             const rowYear = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
@@ -259,7 +272,12 @@ const DataProcessor = {
             // Only include HT Power
             const matchSource = row.unitName === 'HT Power (Merged)';
             
-            return matchYear && matchMonth && matchSource;
+            let matchAssigned = true;
+            if (role === 'editor' && assignedUnitsStr !== null) {
+                matchAssigned = assignedUnits.includes(row.unitName);
+            }
+            
+            return matchYear && matchMonth && matchSource && matchAssigned;
         });
     },
     
