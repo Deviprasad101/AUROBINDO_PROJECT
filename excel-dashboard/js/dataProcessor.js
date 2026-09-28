@@ -224,66 +224,81 @@ const DataProcessor = {
         
         return { monthYear: '', isValid: false };
     },
-    
+
+    /**
+     * Resolves the editor's assigned unit names against the actual unit names
+     * in processedData using case-insensitive, trim-safe matching.
+     * Returns the SET of actual unitName strings the editor has access to.
+     */
+    resolveEditorUnits: function() {
+        const role = localStorage.getItem('userRole');
+        if (role !== 'editor') return null; // null = no restriction
+
+        const assignedUnitsStr = localStorage.getItem('assignedUnits');
+        const isBlank = !assignedUnitsStr ||
+            assignedUnitsStr === 'null' ||
+            assignedUnitsStr === 'undefined' ||
+            assignedUnitsStr.trim() === '';
+        if (isBlank) return null; // null = no restriction (editor with no units set)
+
+        const assigned = assignedUnitsStr.split(',').map(s => s.trim().toLowerCase());
+        const resolved = new Set();
+
+        // Match each actual unitName against the assigned list case-insensitively
+        AppState.availableUnits.forEach(actualUnit => {
+            const normalised = actualUnit.trim().toLowerCase();
+            if (assigned.some(a => a === normalised || normalised.includes(a) || a.includes(normalised))) {
+                resolved.add(actualUnit);
+            }
+        });
+
+        return resolved; // Set of actual unit strings the editor may see
+    },
+
+
+
     /**
      * Get data filtered by year, month and unit
      */
     getFilteredData: function(years = [], months = [], units = []) {
-        const role = localStorage.getItem('userRole');
-        const assignedUnitsStr = localStorage.getItem('assignedUnits');
-        const assignedUnits = assignedUnitsStr ? assignedUnitsStr.split(',') : [];
+        const editorUnits = this.resolveEditorUnits(); // null = no restriction
 
         return AppState.processedData.filter(row => {
-            const rowYear = row.monthYear.split('-')[0];
+            const rowYear  = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
-            
-            const matchYear = years.includes("all") ? true : (years.length > 0 && years.includes(rowYear));
-            const matchMonth = months.includes("all") ? true : (months.length > 0 && months.includes(rowMonth));
-            const matchUnit = units.includes("all") ? true : (units.length > 0 && units.includes(row.unitName));
-            const matchSource = row.unitName !== 'HT Power (Merged)';
-            
-            let matchAssigned = true;
-            if (role === 'editor' && assignedUnitsStr !== null) {
-                matchAssigned = assignedUnits.includes(row.unitName);
-            }
-            
-            return matchYear && matchMonth && matchUnit && matchSource && matchAssigned;
+
+            const matchYear  = years.includes('all')  ? true : (years.length  > 0 && years.includes(rowYear));
+            const matchMonth = months.includes('all') ? true : (months.length > 0 && months.includes(rowMonth));
+            const matchUnit  = units.includes('all')  ? true : (units.length  > 0 && units.includes(row.unitName));
+
+            // Editor restriction: only rows whose unitName is in the resolved set
+            const matchAssigned = editorUnits === null ? true : editorUnits.has(row.unitName);
+
+            return matchYear && matchMonth && matchUnit && matchAssigned;
         });
     },
-    
 
-    
     /**
      * Get data explicitly filtered for HT Power Analysis Tab
      * (Only "HT Power (Merged)")
      */
     getHTPowerData: function(years = [], months = []) {
-        const role = localStorage.getItem('userRole');
-        const assignedUnitsStr = localStorage.getItem('assignedUnits');
-        const assignedUnits = assignedUnitsStr ? assignedUnitsStr.split(',') : [];
+        const editorUnits = this.resolveEditorUnits(); // null = no restriction
 
         return AppState.processedData.filter(row => {
-            const rowYear = row.monthYear.split('-')[0];
+            const rowYear  = row.monthYear.split('-')[0];
             const rowMonth = row.monthYear.split('-')[1];
-            
-            const matchYear = years.includes("all") ? true : (years.length > 0 && years.includes(rowYear));
-            const matchMonth = months.includes("all") ? true : (months.length > 0 && months.includes(rowMonth));
-            
-            // Only include HT Power
+
+            const matchYear   = years.includes('all')  ? true : (years.length  > 0 && years.includes(rowYear));
+            const matchMonth  = months.includes('all') ? true : (months.length > 0 && months.includes(rowMonth));
             const matchSource = row.unitName === 'HT Power (Merged)';
-            
-            let matchAssigned = true;
-            if (role === 'editor' && assignedUnitsStr !== null) {
-                matchAssigned = assignedUnits.includes(row.unitName);
-            }
-            
+
+            const matchAssigned = editorUnits === null ? true : editorUnits.has(row.unitName);
+
             return matchYear && matchMonth && matchSource && matchAssigned;
         });
     },
-    
-    /**
-     * Calculate KPIs for given data
-     */
+
     calculateKPIs: function(data) {
         if (!data || data.length === 0) {
             return {
@@ -373,37 +388,46 @@ const DataProcessor = {
     getChartData: function(filteredData, metricKeys = ['total_units'], filterUnits = []) {
         // 1. Category Distribution (Pie) based on first metric
         const sourceDist = {};
-        
-        // (We don't need to force-initialize 0 values when grouping by category because categories are derived from actual data rows)
-        
+
+        // Build the list of expected units for pie init (so zero-value units still appear)
+        let expectedUnits = [];
+        if (filterUnits.includes('all')) {
+            const editorUnits = this.resolveEditorUnits();
+            if (editorUnits !== null) {
+                expectedUnits = Array.from(editorUnits);
+            } else {
+                expectedUnits = Array.from(AppState.availableUnits);
+            }
+        } else {
+            expectedUnits = filterUnits;
+        }
+
+        expectedUnits.forEach(u => sourceDist[u] = 0);
+
         const primaryMetric = metricKeys[0];
-        
-        // 2. Monthly Trend (Filtered months) - Bar Chart (multiple metrics)
+
+        // 2. Monthly Trend - Bar Chart (multiple metrics)
         const monthlyTrend = {};
-        
+
         filteredData.forEach(row => {
-            // Category Dist
+            // Category Dist (pie)
             const pieVal = row.metrics ? (row.metrics[primaryMetric] || 0) : (row.units || 0);
-            sourceDist[row.category] = (sourceDist[row.category] || 0) + pieVal;
-            
+            sourceDist[row.unitName] = (sourceDist[row.unitName] || 0) + pieVal;
+
             // Monthly Trend
             if (!monthlyTrend[row.monthYear]) {
                 monthlyTrend[row.monthYear] = {};
                 metricKeys.forEach(k => monthlyTrend[row.monthYear][k] = 0);
             }
-            
             metricKeys.forEach(k => {
                 const metricVal = row.metrics ? (row.metrics[k] || 0) : (row.units || 0);
                 monthlyTrend[row.monthYear][k] += metricVal;
             });
         });
-        
-        return {
-            sourceDist,
-            monthlyTrend
-        };
+
+        return { sourceDist, monthlyTrend };
     },
-    
+
     /**
      * Format numbers to Indian Locale
      */

@@ -379,25 +379,24 @@ const Dashboard = {
         this.populateMultiSelect(this.htMonthSelect, monthOptions, "All Months");
         
         // Populate Unit
+        // For editors: use resolveEditorUnits() so the unit list matches the actual data exactly
         const role = localStorage.getItem('userRole');
-        const assignedUnitsStr = localStorage.getItem('assignedUnits');
-        const assignedUnits = assignedUnitsStr ? assignedUnitsStr.split(',') : [];
-
         let unitOptions = [];
         
-        if (role === 'editor' && assignedUnitsStr !== null && assignedUnits.length > 0) {
-            // If editor, ALWAYS show exactly the units assigned by Admin
-            unitOptions = assignedUnits
-                .filter(u => u !== 'HT Power (Merged)') // Exclude HT power from general tab
-                .map(u => ({value: u, text: u}));
+        if (role === 'editor') {
+            const resolved = DataProcessor.resolveEditorUnits();
+            if (resolved && resolved.size > 0) {
+                unitOptions = Array.from(resolved).sort().map(u => ({value: u, text: u}));
+            } else {
+                // Editor has no assigned units or they don't match the data – show all like a user
+                unitOptions = Array.from(AppState.availableUnits).sort().map(u => ({value: u, text: u}));
+            }
         } else {
-            // For admin/user, show units available in the Excel file
-            unitOptions = Array.from(AppState.availableUnits)
-                .filter(u => u !== 'HT Power (Merged)')
-                .sort().map(u => ({value: u, text: u}));
+            // For admin/user, show all units available in the Excel file
+            unitOptions = Array.from(AppState.availableUnits).sort().map(u => ({value: u, text: u}));
         }
             
-        this.populateMultiSelect(this.unitSelect, unitOptions, "All Units");
+        this.populateMultiSelect(this.unitSelect, unitOptions, 'All Units');
     },
     
     onFilterChange: function() {
@@ -472,12 +471,22 @@ const Dashboard = {
             if (document.getElementById('pie-chart-card')) {
                 document.getElementById('pie-chart-card').style.display = 'none';
             }
+            if (document.getElementById('pie-chart-rupees-card')) {
+                document.getElementById('pie-chart-rupees-card').style.display = 'none';
+            }
             
             return;
         }
         
         // Get filtered data
         const filteredData = DataProcessor.getFilteredData(years, months, units);
+        
+        if (filteredData.length === 0) {
+            this.updateKPIs([], metricNames);
+            this.updateTable([], this.dataTableBody, this.tableEmptyState, "", metricKeys, metricNames);
+            // We NO LONGER hide the charts completely here. The user explicitly requested 
+            // that the chart cards remain visible (even if empty) so the dashboard doesn't "break".
+        }
         
         // Update KPIs (Dynamic generation by month, filtered by selected metrics)
         this.updateKPIs(filteredData, metricNames);
@@ -497,6 +506,8 @@ const Dashboard = {
             const unitChartData = DataProcessor.getChartData(filteredData, unitMetrics, units);
             if (Object.keys(unitChartData.monthlyTrend).length > 0) {
                 ChartManager.createMonthlyTrendChart(unitChartData.monthlyTrend, 'wrapper-monthly-trend-units', 'monthlyTrendUnits', unitMetrics);
+            } else {
+                document.getElementById('wrapper-monthly-trend-units').innerHTML = '<div style="text-align:center;padding:60px 20px;color:#94a3b8;font-size:14px;">No data found for the selected filters</div>';
             }
         } else {
             unitsCard.style.display = 'none';
@@ -509,30 +520,39 @@ const Dashboard = {
             const rupeesChartData = DataProcessor.getChartData(filteredData, rupeesMetrics, units);
             if (Object.keys(rupeesChartData.monthlyTrend).length > 0) {
                 ChartManager.createMonthlyTrendChart(rupeesChartData.monthlyTrend, 'wrapper-monthly-trend-rupees', 'monthlyTrendRupees', rupeesMetrics);
+            } else {
+                document.getElementById('wrapper-monthly-trend-rupees').innerHTML = '<div style="text-align:center;padding:60px 20px;color:#94a3b8;font-size:14px;">No data found for the selected filters</div>';
             }
         } else {
             rupeesCard.style.display = 'none';
         }
         
-        // Use the first metric for Pie Chart Distribution (Only if NOT editor, per user request)
-        const role = localStorage.getItem('userRole');
-        if (role === 'user' || role === 'admin') {
-            const pieCard = document.getElementById('pie-chart-card');
-            if (pieCard) {
-                if (units && units.length > 0) {
-                    const allChartData = DataProcessor.getChartData(filteredData, [metricNames[0]], units);
-                    if (Object.keys(allChartData.sourceDist).length > 0) {
-                        pieCard.style.display = 'block';
-                        ChartManager.createCategoryDistChart(allChartData.sourceDist, 'chart-category-dist', 'categoryDist', metricNames[0]);
-                        pieCard.parentElement.classList.add('has-pie');
-                    } else {
-                        pieCard.style.display = 'none';
-                        pieCard.parentElement.classList.remove('has-pie');
-                    }
-                } else {
-                    pieCard.style.display = 'none';
-                    pieCard.parentElement.classList.remove('has-pie');
-                }
+        // 3. Units Pie Chart
+        const pieCard = document.getElementById('pie-chart-card');
+        if (pieCard) {
+            if (units && units.length > 0 && unitMetrics.length > 0) {
+                pieCard.style.display = 'block';
+                const unitsChartData = DataProcessor.getChartData(filteredData, [unitMetrics[0]], units);
+                const hasData = Object.values(unitsChartData.sourceDist).some(val => val > 0);
+                ChartManager.createCategoryDistChart(unitsChartData.sourceDist, 'chart-category-dist', 'categoryDist', unitMetrics[0]);
+                pieCard.parentElement.classList.add('has-pie');
+            } else {
+                pieCard.style.display = 'none';
+                pieCard.parentElement.classList.remove('has-pie');
+            }
+        }
+        
+        // 4. Rupees Pie Chart
+        const pieRupeesCard = document.getElementById('pie-chart-rupees-card');
+        if (pieRupeesCard) {
+            if (units && units.length > 0 && rupeesMetrics.length > 0) {
+                pieRupeesCard.style.display = 'block';
+                const rupeesDistData = DataProcessor.getChartData(filteredData, [rupeesMetrics[0]], units);
+                const hasData = Object.values(rupeesDistData.sourceDist).some(val => val > 0);
+                ChartManager.createCategoryDistChart(rupeesDistData.sourceDist, 'chart-rupees-dist', 'rupeesDist', rupeesMetrics[0]);
+                pieRupeesCard.parentElement.classList.add('has-pie');
+            } else {
+                pieRupeesCard.style.display = 'none';
             }
         }
 
