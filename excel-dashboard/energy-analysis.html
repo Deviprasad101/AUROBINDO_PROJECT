@@ -48,141 +48,224 @@
             box-shadow: 0 0 0 2px var(--primary-light);
         }
 
-        /* --- HORIZONTAL TREE STYLES --- */
+        /* --- MODERN HORIZONTAL TREE STYLES --- */
         .tree-container {
             width: 100%;
             overflow-x: auto;
             text-align: center;
-            padding: 40px 20px;
-            background: #f8fafc;
-            border-radius: 12px;
-            margin-bottom: 24px;
+            padding: 50px 40px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 20px;
+            margin-bottom: 32px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 4px 6px rgba(0,0,0,0.02);
         }
-        .tree {
+
+        .modern-tree {
             display: inline-flex;
             justify-content: center;
             padding: 0;
             margin: 0;
+            text-align: center;
         }
-        .tree ul {
-            padding-top: 20px; 
+
+        .modern-tree ul {
+            padding-top: 30px; 
             position: relative;
-            transition: all 0.5s;
             display: flex;
             justify-content: center;
             padding-left: 0;
             margin: 0;
             list-style: none;
         }
-        .tree li {
+
+        .modern-tree li {
             float: left; 
             text-align: center;
             list-style-type: none;
             position: relative;
-            padding: 20px 10px 0 10px;
-            transition: all 0.5s;
+            padding: 30px 15px 0 15px;
         }
 
-        /* Connecting lines */
-        .tree li::before, .tree li::after {
+        /* Connectors */
+        .modern-tree li::before, .modern-tree li::after {
             content: '';
             position: absolute; top: 0; right: 50%;
-            border-top: 2px solid #cbd5e1;
-            width: 50%; height: 20px;
+            border-top: 2px solid transparent;
+            width: 50%; height: 30px;
+            z-index: 1;
+            transition: border-color 0.4s ease-in-out;
         }
-        .tree li::after {
+        .modern-tree li::after {
             right: auto; left: 50%;
-            border-left: 2px solid #cbd5e1;
+            border-left: 2px solid transparent;
         }
 
-        /* Remove left-right connectors from elements without any siblings */
-        .tree li:only-child::after, .tree li:only-child::before {
-            display: none;
+        /* Active connector drawing animation */
+        .modern-tree ul.show > li::before,
+        .modern-tree ul.show > li::after {
+            border-top-color: #cbd5e1; 
         }
-        /* Remove space from the top of single children */
-        .tree li:only-child { padding-top: 0; }
+        .modern-tree ul.show > li::after {
+            border-left-color: #cbd5e1;
+        }
 
-        /* Remove left connector from first child and right connector from last child */
-        .tree li:first-child::before, .tree li:last-child::after {
-            border: 0 none;
-        }
-        /* Adding back the vertical connector to the last nodes */
-        .tree li:last-child::before {
-            border-right: 2px solid #cbd5e1;
-            border-radius: 0 6px 0 0;
-        }
-        .tree li:first-child::after {
-            border-radius: 6px 0 0 0;
-        }
+        /* Connector extremities */
+        .modern-tree li:only-child::after, .modern-tree li:only-child::before { display: none; }
+        .modern-tree li:only-child { padding-top: 0; }
+        .modern-tree li:first-child::before, .modern-tree li:last-child::after { border: 0 none; }
+        .modern-tree li:last-child::before { border-right: 2px solid transparent; border-radius: 0 8px 0 0; }
+        .modern-tree li:first-child::after { border-radius: 8px 0 0 0; }
+        .modern-tree ul.show > li:last-child::before { border-right-color: #cbd5e1; }
 
         /* Downward connectors from parents */
-        .tree ul ul::before {
+        .modern-tree ul ul::before {
             content: '';
             position: absolute; top: 0; left: 50%;
-            border-left: 2px solid #cbd5e1;
-            width: 0; height: 20px;
+            border-left: 2px solid transparent;
+            width: 0; height: 30px;
+            transition: border-color 0.4s ease-in-out;
+        }
+        .modern-tree ul.show::before {
+            border-left-color: #cbd5e1;
         }
 
-        .tree .node {
-            border: 1px solid #cbd5e1;
-            padding: 12px 24px;
-            text-decoration: none;
-            color: #1e293b;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            font-size: 14px;
-            display: inline-block;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            background: white;
+        /* Root Node */
+        .modern-tree .node-root {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3), inset 0 1px 1px rgba(255,255,255,0.2);
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             position: relative;
             z-index: 2;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.1);
+            outline: none;
+        }
+        .modern-tree .node-root:hover, .modern-tree .node-root:focus-visible {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(79, 70, 229, 0.4), 0 0 20px rgba(124, 58, 237, 0.4);
+        }
+        .modern-tree .node-root.active {
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3), 0 10px 25px rgba(79, 70, 229, 0.5), 0 0 20px rgba(124, 58, 237, 0.5);
+            border-color: #c4b5fd;
+        }
+        .node-root .node-icon {
+            font-size: 1.5rem;
+            color: #fca5a5;
+            text-shadow: 0 0 10px rgba(252, 165, 165, 0.8);
+        }
+        .node-root .node-content { text-align: left; }
+        .node-root .node-title { font-weight: 700; font-size: 1.1rem; letter-spacing: 1px; }
+        .node-root .node-subtitle { font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; }
+        .node-root .node-chevron { transition: transform 0.4s; margin-left: 8px; font-size: 0.9rem; }
+        .node-root[aria-expanded="true"] .node-chevron { transform: rotate(180deg); }
+
+        /* Standard Nodes */
+        .modern-tree .node {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
         }
 
-        .tree .node:hover {
-            background: #f1f5f9;
-            border-color: #94a3b8;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        .modern-tree .node:hover, .modern-tree .node:focus-visible {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border-color: #cbd5e1;
+        }
+
+        /* Specific Unit Colors (Hover & Active Glows) */
+        .modern-tree .node[data-color="blue"].active { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3), 0 4px 10px rgba(59, 130, 246, 0.2); transform: scale(1.05); }
+        .modern-tree .node[data-color="blue"].active i { color: #3b82f6; }
+        
+        .modern-tree .node[data-color="cyan"].active { background: #ecfeff; border-color: #06b6d4; color: #0e7490; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3), 0 4px 10px rgba(6, 182, 212, 0.2); transform: scale(1.05); }
+        .modern-tree .node[data-color="cyan"].active i { color: #06b6d4; }
+        
+        .modern-tree .node[data-color="indigo"].active { background: #eef2ff; border-color: #6366f1; color: #4338ca; box-shadow: 0 0 15px rgba(99, 102, 241, 0.3), 0 4px 10px rgba(99, 102, 241, 0.2); transform: scale(1.05); }
+        .modern-tree .node[data-color="indigo"].active i { color: #6366f1; }
+        
+        .modern-tree .node[data-color="green"].active { background: #ecfdf5; border-color: #10b981; color: #047857; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3), 0 4px 10px rgba(16, 185, 129, 0.2); transform: scale(1.05); }
+        .modern-tree .node[data-color="green"].active i { color: #10b981; }
+        
+        .modern-tree .node[data-color="orange"].active { background: #fff7ed; border-color: #f97316; color: #c2410c; box-shadow: 0 0 15px rgba(249, 115, 22, 0.3), 0 4px 10px rgba(249, 115, 22, 0.2); transform: scale(1.05); }
+        .modern-tree .node[data-color="orange"].active i { color: #f97316; }
+        
+        .modern-tree .node[data-color="blue-light"].active { background: #f0f9ff; border-color: #0ea5e9; color: #0369a1; box-shadow: 0 0 15px rgba(14, 165, 233, 0.3), 0 4px 10px rgba(14, 165, 233, 0.2); transform: scale(1.05); }
+        .modern-tree .node[data-color="blue-light"].active i { color: #0ea5e9; }
+        
+        .modern-tree .node[data-color="purple"].active { background: #faf5ff; border-color: #a855f7; color: #7e22ce; box-shadow: 0 0 15px rgba(168, 85, 247, 0.3), 0 4px 10px rgba(168, 85, 247, 0.2); transform: scale(1.05); }
+        .modern-tree .node[data-color="purple"].active i { color: #a855f7; }
+
+        .modern-tree .node i:not(.chevron-small) { opacity: 0.7; font-size: 1.1rem; margin-right: 2px; }
+        .modern-tree .chevron-small { font-size: 0.75rem; transition: transform 0.3s; margin-left: 6px; opacity: 0.5; }
+        .modern-tree .node[aria-expanded="true"] .chevron-small { transform: rotate(180deg); opacity: 1; }
+
+        /* Sequential Node Animation */
+        .modern-tree .children {
+            /* managed by JS */
         }
         
-        .tree .node.active {
-            background: #4f46e5;
-            color: white;
-            border-color: #4f46e5;
-            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5), 0 4px 12px rgba(79, 70, 229, 0.3);
-            transform: translateY(-2px) scale(1.05);
+        .modern-tree .children > li > .node,
+        .modern-tree .children > li > .node-root,
+        .modern-tree .children > li > .children-wrapper {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.9);
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: blur(4px);
         }
 
-        /* Collapsed state */
-        .tree .children {
+        .modern-tree .children.show > li > .node,
+        .modern-tree .children.show > li > .node-root,
+        .modern-tree .children.show > li > .children-wrapper {
             opacity: 1;
-            transform: scaleY(1);
-            transform-origin: top;
-            transition: all 0.4s ease-in-out;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+            filter: blur(0);
         }
-        .tree .children.collapsed {
-            display: none;
-            opacity: 0;
-            transform: scaleY(0);
-        }
+
+        /* Stagger delays for expanding (forward) */
+        .modern-tree .children.show > li:nth-child(1) > .node, .modern-tree .children.show > li:nth-child(1) > .children-wrapper { transition-delay: 0.1s; }
+        .modern-tree .children.show > li:nth-child(2) > .node, .modern-tree .children.show > li:nth-child(2) > .children-wrapper { transition-delay: 0.2s; }
+        .modern-tree .children.show > li:nth-child(3) > .node, .modern-tree .children.show > li:nth-child(3) > .children-wrapper { transition-delay: 0.3s; }
+        .modern-tree .children.show > li:nth-child(4) > .node, .modern-tree .children.show > li:nth-child(4) > .children-wrapper { transition-delay: 0.4s; }
+        .modern-tree .children.show > li:nth-child(5) > .node, .modern-tree .children.show > li:nth-child(5) > .children-wrapper { transition-delay: 0.5s; }
+
+        /* Stagger delays for collapsing (reverse) */
+        .modern-tree .children:not(.show) > li:nth-child(1) > .node, .modern-tree .children:not(.show) > li:nth-child(1) > .children-wrapper { transition-delay: 0.2s; }
+        .modern-tree .children:not(.show) > li:nth-child(2) > .node, .modern-tree .children:not(.show) > li:nth-child(2) > .children-wrapper { transition-delay: 0.15s; }
+        .modern-tree .children:not(.show) > li:nth-child(3) > .node, .modern-tree .children:not(.show) > li:nth-child(3) > .children-wrapper { transition-delay: 0.1s; }
+        .modern-tree .children:not(.show) > li:nth-child(4) > .node, .modern-tree .children:not(.show) > li:nth-child(4) > .children-wrapper { transition-delay: 0.05s; }
+        .modern-tree .children:not(.show) > li:nth-child(5) > .node, .modern-tree .children:not(.show) > li:nth-child(5) > .children-wrapper { transition-delay: 0s; }
 
         /* --- SUMMARY CARDS --- */
         .tree-summary-cards {
             display: flex;
             gap: 16px;
             justify-content: center;
-            margin-top: 24px;
+            margin-top: 40px;
             flex-wrap: wrap;
             
-            /* Base state for smooth closing */
             opacity: 0;
-            transform: translateY(-15px);
-            transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+            transform: translateY(-20px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
         }
         .tree-summary-cards.show {
             opacity: 1;
@@ -191,47 +274,62 @@
 
         .tsc-card {
             background: #fff;
-            border-radius: 12px;
-            padding: 16px 24px;
+            border-radius: 16px;
+            padding: 20px 24px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            min-width: 220px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 10px 15px -3px rgba(0,0,0,0.05);
+            min-width: 200px;
             text-align: center;
-            border-top: 4px solid #4f46e5;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
             
             /* Staggered entry animation */
             opacity: 0;
             animation: staggerCardIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
+        .tsc-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--card-color, #4f46e5);
+        }
+        
         @keyframes staggerCardIn {
-            0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+            0% { opacity: 0; transform: translateY(25px) scale(0.9); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        /* Delays for staggered effect */
-        .tsc-card:nth-child(1) { animation-delay: 100ms; }
-        .tsc-card:nth-child(2) { animation-delay: 200ms; }
-        .tsc-card:nth-child(3) { animation-delay: 300ms; }
-        .tsc-card:nth-child(4) { animation-delay: 400ms; }
+        
+        .tsc-card:nth-child(1) { animation-delay: 100ms; --card-color: #3b82f6; }
+        .tsc-card:nth-child(2) { animation-delay: 200ms; --card-color: #10b981; }
+        .tsc-card:nth-child(3) { animation-delay: 300ms; --card-color: #8b5cf6; }
+        .tsc-card:nth-child(4) { animation-delay: 400ms; --card-color: #f59e0b; }
+        .tsc-card:nth-child(5) { animation-delay: 500ms; --card-color: #ec4899; }
 
         .tsc-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08);
         }
         .tsc-label {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #64748b;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             letter-spacing: 0.5px;
         }
         .tsc-value {
-            font-size: 1.6rem;
-            color: #1e293b;
-            font-weight: 700;
+            font-size: 1.65rem;
+            color: #0f172a;
+            font-weight: 800;
         }
-    </style>
+        .tsc-subtext {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+</style>
 </head>
 <body>
     <header class="header">
@@ -249,24 +347,35 @@
 
     <div class="ea-container">
         
-        <!-- Animated Horizontal Tree View -->
+        <!-- Premium Animated Horizontal Tree View -->
         <div class="tree-container">
-            <div class="tree">
+            <div class="modern-tree">
                 <ul>
                     <li>
-                        <div class="node active" onclick="handleNodeClick(this, 'ALL_UNITS', true)">UNITS</div>
-                        <ul class="children" id="tree-root-children">
-                            <li><div class="node" onclick="handleNodeClick(this, 'U-XV', false)">U-XV</div></li>
-                            <li><div class="node" onclick="handleNodeClick(this, 'HCL-iV', false)">HCL-iV</div></li>
+                        <div class="node-root active" onclick="handleNodeClick(this, 'ALL_UNITS', true, 'tree-main-children')" tabindex="0" role="button" aria-expanded="true">
+                            <div class="node-icon"><i class="fa-solid fa-bolt"></i></div>
+                            <div class="node-content">
+                                <div class="node-title">UNITS</div>
+                                <div class="node-subtitle">Energy Network</div>
+                            </div>
+                            <div class="node-chevron"><i class="fa-solid fa-chevron-down"></i></div>
+                        </div>
+                        <ul class="children show" id="tree-main-children" style="display: flex;">
+                            <li><div class="node" data-color="blue" onclick="handleNodeClick(this, 'U-XV', false)" tabindex="0" role="button"><i class="fa-solid fa-building"></i> U-XV</div></li>
+                            <li><div class="node" data-color="cyan" onclick="handleNodeClick(this, 'HCL-iV', false)" tabindex="0" role="button"><i class="fa-solid fa-industry"></i> HCL-iV</div></li>
                             <li>
-                                <div class="node" onclick="handleNodeClick(this, 'Unit-VII', true)">Unit-VII</div>
-                                <ul class="children">
-                                    <li><div class="node" onclick="handleNodeClick(this, 'UNITS APL HC-01', false)">APL HC-01</div></li>
-                                    <li><div class="node" onclick="handleNodeClick(this, 'UNITS APL HC-03', false)">APL HC-03</div></li>
-                                </ul>
+                                <div class="children-wrapper" style="position:relative">
+                                    <div class="node" data-color="indigo" onclick="handleNodeClick(this, 'Unit-VII', true, 'tree-sub-children')" tabindex="0" role="button" aria-expanded="false">
+                                        <i class="fa-solid fa-industry"></i> Unit-VII <i class="fa-solid fa-chevron-down chevron-small"></i>
+                                    </div>
+                                    <ul class="children" id="tree-sub-children" style="display: none;">
+                                        <li><div class="node" data-color="blue-light" onclick="handleNodeClick(this, 'UNITS APL HC-01', false)" tabindex="0" role="button"><i class="fa-solid fa-file-contract"></i> APL HC-01</div></li>
+                                        <li><div class="node" data-color="purple" onclick="handleNodeClick(this, 'UNITS APL HC-03', false)" tabindex="0" role="button"><i class="fa-solid fa-file-contract"></i> APL HC-03</div></li>
+                                    </ul>
+                                </div>
                             </li>
-                            <li><div class="node" onclick="handleNodeClick(this, 'Unit XII', false)">Unit XII</div></li>
-                            <li><div class="node" onclick="handleNodeClick(this, 'Unit-III', false)">Unit-III</div></li>
+                            <li><div class="node" data-color="green" onclick="handleNodeClick(this, 'Unit XII', false)" tabindex="0" role="button"><i class="fa-solid fa-building"></i> Unit XII</div></li>
+                            <li><div class="node" data-color="orange" onclick="handleNodeClick(this, 'Unit-III', false)" tabindex="0" role="button"><i class="fa-solid fa-building"></i> Unit-III</div></li>
                         </ul>
                     </li>
                 </ul>
@@ -351,27 +460,46 @@
             }, 500); // Give realData a moment to load if needed
         });
 
-        function handleNodeClick(el, unitName, hasChildren) {
-            // Toggle children if any
-            if (hasChildren) {
-                const ul = el.nextElementSibling;
-                if (ul && ul.classList.contains('children')) {
-                    ul.classList.toggle('collapsed');
+        function handleNodeClick(el, unitName, hasChildren, ulId) {
+            // Handle expand/collapse logic if it has children
+            if (hasChildren && ulId) {
+                const ul = document.getElementById(ulId);
+                const isExpanded = el.getAttribute('aria-expanded') === 'true';
+                
+                if (isExpanded) {
+                    // Smooth Collapse
+                    el.setAttribute('aria-expanded', 'false');
+                    ul.classList.remove('show');
+                    // Wait for CSS reverse animation to finish before setting display none
+                    setTimeout(() => {
+                        if (el.getAttribute('aria-expanded') === 'false') {
+                            ul.style.display = 'none';
+                        }
+                    }, 400);
+                } else {
+                    // Smooth Expand
+                    el.setAttribute('aria-expanded', 'true');
+                    ul.style.display = 'flex';
+                    // Force a reflow so transition applies
+                    void ul.offsetWidth; 
+                    ul.classList.add('show');
                 }
             }
             
-            // Update active state
-            document.querySelectorAll('.tree .node').forEach(n => n.classList.remove('active'));
+            // Manage Active States
+            document.querySelectorAll('.modern-tree .node-root, .modern-tree .node').forEach(n => {
+                n.classList.remove('active');
+            });
             el.classList.add('active');
 
-            // Trigger dashboard update via the hidden selector
+            // Trigger existing dashboard update via the hidden selector
             const selector = document.getElementById('unit-selector');
-            if (selector) {
+            if (selector && selector.value !== unitName) {
                 selector.value = unitName;
                 selector.dispatchEvent(new Event('change'));
             }
 
-            // Show beautiful summary cards
+            // Show beautiful staggered summary cards
             renderSummaryCards(unitName);
         }
 
@@ -384,16 +512,17 @@
             
             // Wait for close animation, then re-render and open
             setTimeout(() => {
-                let totalEnergy = 0;
-                let totalCost = 0;
-                let avgRate = 0;
+                let totalEnergy = 0, totalCost = 0, ebUnits = 0, oaUnits = 0, avgRate = 0;
                 
                 if (unitName === 'ALL_UNITS') {
-                    let tE = 0, tC = 0, rCount=0, rSum=0;
+                    let rCount=0, rSum=0;
                     Object.values(window.RealTreeData || {}).forEach(u => {
                         if (u.datasets) {
-                            tE += (u.datasets['Total Unts (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
-                            tC += (u.datasets['Total value (Rs.)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                            totalEnergy += (u.datasets['Total Unts (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                            totalCost += (u.datasets['Total value (Rs.)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                            ebUnits += (u.datasets['EB Units (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                            oaUnits += (u.datasets['OA Considered IEX (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                            
                             const rates = (u.datasets['Landed Rate/Kwh with FPPC (Rs.)'] || []).filter(r=>r>0);
                             if(rates.length) { 
                                 rSum += rates.reduce((a,b)=>a+parseFloat(b),0) / rates.length; 
@@ -401,44 +530,65 @@
                             }
                         }
                     });
-                    totalEnergy = tE;
-                    totalCost = tC;
                     avgRate = rCount ? (rSum/rCount) : 0;
                 } else {
                     const data = window.RealTreeData ? window.RealTreeData[unitName] : null;
                     if (data && data.datasets) {
                         totalEnergy = (data.datasets['Total Unts (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
                         totalCost = (data.datasets['Total value (Rs.)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                        ebUnits = (data.datasets['EB Units (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                        oaUnits = (data.datasets['OA Considered IEX (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                        
                         const rates = (data.datasets['Landed Rate/Kwh with FPPC (Rs.)'] || []).filter(r=>r>0);
                         avgRate = rates.length ? rates.reduce((a,b)=>a+parseFloat(b),0) / rates.length : 0;
                     }
                 }
 
                 const fmtNum = (n) => new Intl.NumberFormat('en-IN', {maximumFractionDigits:0}).format(n||0);
-                const fmtRs = (n) => '₹' + fmtNum(n);
+                
+                // Smart money formatting
+                const fmtRs = (n) => {
+                    if (n >= 10000000) return '₹' + (n / 10000000).toFixed(2) + ' Cr';
+                    if (n >= 100000) return '₹' + (n / 100000).toFixed(2) + ' L';
+                    return '₹' + fmtNum(n);
+                };
+                
                 const fmtRate = (n) => '₹' + (n||0).toFixed(2) + '/KWh';
 
                 container.innerHTML = `
-                    <div class="tsc-card" style="border-top-color: #3b82f6;">
-                        <div class="tsc-label">Total Energy</div>
-                        <div class="tsc-value">${fmtNum(totalEnergy)} KVAh</div>
+                    <div class="tsc-card">
+                        <div class="tsc-label">Total Units</div>
+                        <div class="tsc-value">${fmtNum(totalEnergy)}</div>
+                        <div class="tsc-subtext">KVAh</div>
                     </div>
-                    <div class="tsc-card" style="border-top-color: #10b981;">
-                        <div class="tsc-label">Total Cost</div>
+                    <div class="tsc-card">
+                        <div class="tsc-label">Total Value</div>
                         <div class="tsc-value">${fmtRs(totalCost)}</div>
+                        <div class="tsc-subtext">INR</div>
                     </div>
-                    <div class="tsc-card" style="border-top-color: #f59e0b;">
-                        <div class="tsc-label">Avg Landed Rate</div>
+                    <div class="tsc-card">
+                        <div class="tsc-label">EB Units</div>
+                        <div class="tsc-value">${fmtNum(ebUnits)}</div>
+                        <div class="tsc-subtext">KVAh</div>
+                    </div>
+                    <div class="tsc-card">
+                        <div class="tsc-label">OA/IEX Units</div>
+                        <div class="tsc-value">${fmtNum(oaUnits)}</div>
+                        <div class="tsc-subtext">KVAh</div>
+                    </div>
+                    <div class="tsc-card">
+                        <div class="tsc-label">Avg. Rate</div>
                         <div class="tsc-value">${fmtRate(avgRate)}</div>
+                        <div class="tsc-subtext">Landed Rate</div>
                     </div>
                 `;
                 
-                // Remove inline display if it exists, force re-flow, and add 'show'
+                // Reveal container and force animation restart
                 container.style.display = '';
                 void container.offsetWidth; 
                 container.classList.add('show');
-            }, 250);
+            }, 300);
         }
-    </script>
+</script>
 </body>
 </html>
