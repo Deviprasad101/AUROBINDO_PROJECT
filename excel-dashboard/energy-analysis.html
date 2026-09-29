@@ -47,6 +47,190 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px var(--primary-light);
         }
+
+        /* --- HORIZONTAL TREE STYLES --- */
+        .tree-container {
+            width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            padding: 40px 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .tree {
+            display: inline-flex;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+        }
+        .tree ul {
+            padding-top: 20px; 
+            position: relative;
+            transition: all 0.5s;
+            display: flex;
+            justify-content: center;
+            padding-left: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .tree li {
+            float: left; 
+            text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 20px 10px 0 10px;
+            transition: all 0.5s;
+        }
+
+        /* Connecting lines */
+        .tree li::before, .tree li::after {
+            content: '';
+            position: absolute; top: 0; right: 50%;
+            border-top: 2px solid #cbd5e1;
+            width: 50%; height: 20px;
+        }
+        .tree li::after {
+            right: auto; left: 50%;
+            border-left: 2px solid #cbd5e1;
+        }
+
+        /* Remove left-right connectors from elements without any siblings */
+        .tree li:only-child::after, .tree li:only-child::before {
+            display: none;
+        }
+        /* Remove space from the top of single children */
+        .tree li:only-child { padding-top: 0; }
+
+        /* Remove left connector from first child and right connector from last child */
+        .tree li:first-child::before, .tree li:last-child::after {
+            border: 0 none;
+        }
+        /* Adding back the vertical connector to the last nodes */
+        .tree li:last-child::before {
+            border-right: 2px solid #cbd5e1;
+            border-radius: 0 6px 0 0;
+        }
+        .tree li:first-child::after {
+            border-radius: 6px 0 0 0;
+        }
+
+        /* Downward connectors from parents */
+        .tree ul ul::before {
+            content: '';
+            position: absolute; top: 0; left: 50%;
+            border-left: 2px solid #cbd5e1;
+            width: 0; height: 20px;
+        }
+
+        .tree .node {
+            border: 1px solid #cbd5e1;
+            padding: 12px 24px;
+            text-decoration: none;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-block;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            position: relative;
+            z-index: 2;
+        }
+
+        .tree .node:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        
+        .tree .node.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5), 0 4px 12px rgba(79, 70, 229, 0.3);
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        /* Collapsed state */
+        .tree .children {
+            opacity: 1;
+            transform: scaleY(1);
+            transform-origin: top;
+            transition: all 0.4s ease-in-out;
+        }
+        .tree .children.collapsed {
+            display: none;
+            opacity: 0;
+            transform: scaleY(0);
+        }
+
+        /* --- SUMMARY CARDS --- */
+        .tree-summary-cards {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 24px;
+            flex-wrap: wrap;
+            
+            /* Base state for smooth closing */
+            opacity: 0;
+            transform: translateY(-15px);
+            transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+        }
+        .tree-summary-cards.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tsc-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            min-width: 220px;
+            text-align: center;
+            border-top: 4px solid #4f46e5;
+            transition: transform 0.3s, box-shadow 0.3s;
+            
+            /* Staggered entry animation */
+            opacity: 0;
+            animation: staggerCardIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes staggerCardIn {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        /* Delays for staggered effect */
+        .tsc-card:nth-child(1) { animation-delay: 100ms; }
+        .tsc-card:nth-child(2) { animation-delay: 200ms; }
+        .tsc-card:nth-child(3) { animation-delay: 300ms; }
+        .tsc-card:nth-child(4) { animation-delay: 400ms; }
+
+        .tsc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+        }
+        .tsc-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .tsc-value {
+            font-size: 1.6rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -64,7 +248,34 @@
     </header>
 
     <div class="ea-container">
-        <div class="ea-header-controls">
+        
+        <!-- Animated Horizontal Tree View -->
+        <div class="tree-container">
+            <div class="tree">
+                <ul>
+                    <li>
+                        <div class="node active" onclick="handleNodeClick(this, 'ALL_UNITS', true)">UNITS</div>
+                        <ul class="children" id="tree-root-children">
+                            <li><div class="node" onclick="handleNodeClick(this, 'U-XV', false)">U-XV</div></li>
+                            <li><div class="node" onclick="handleNodeClick(this, 'HCL-iV', false)">HCL-iV</div></li>
+                            <li>
+                                <div class="node" onclick="handleNodeClick(this, 'Unit-VII', true)">Unit-VII</div>
+                                <ul class="children">
+                                    <li><div class="node" onclick="handleNodeClick(this, 'UNITS APL HC-01', false)">APL HC-01</div></li>
+                                    <li><div class="node" onclick="handleNodeClick(this, 'UNITS APL HC-03', false)">APL HC-03</div></li>
+                                </ul>
+                            </li>
+                            <li><div class="node" onclick="handleNodeClick(this, 'Unit XII', false)">Unit XII</div></li>
+                            <li><div class="node" onclick="handleNodeClick(this, 'Unit-III', false)">Unit-III</div></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- Summary Cards Placeholder -->
+            <div id="tree-summary-cards" class="tree-summary-cards" style="display: none;"></div>
+        </div>
+
+        <div class="ea-header-controls" style="display: none;">
             <div>
                 <h2 style="margin: 0; font-size: 1.25rem; color: #1e293b;">Energy Consumption & Cost Analysis</h2>
                 <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.9rem;">Select a unit from the dropdown to view its detailed energy breakdown.</p>
@@ -131,7 +342,103 @@
             // Auto-select ALL_UNITS by default
             selector.value = 'ALL_UNITS';
             selector.dispatchEvent(new Event('change'));
+            
+            // Render initial summary cards for ALL_UNITS
+            setTimeout(() => {
+                if(typeof renderSummaryCards === 'function') {
+                    renderSummaryCards('ALL_UNITS');
+                }
+            }, 500); // Give realData a moment to load if needed
         });
+
+        function handleNodeClick(el, unitName, hasChildren) {
+            // Toggle children if any
+            if (hasChildren) {
+                const ul = el.nextElementSibling;
+                if (ul && ul.classList.contains('children')) {
+                    ul.classList.toggle('collapsed');
+                }
+            }
+            
+            // Update active state
+            document.querySelectorAll('.tree .node').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+
+            // Trigger dashboard update via the hidden selector
+            const selector = document.getElementById('unit-selector');
+            if (selector) {
+                selector.value = unitName;
+                selector.dispatchEvent(new Event('change'));
+            }
+
+            // Show beautiful summary cards
+            renderSummaryCards(unitName);
+        }
+
+        function renderSummaryCards(unitName) {
+            const container = document.getElementById('tree-summary-cards');
+            if (!container) return;
+            
+            // Smoothly close the container first
+            container.classList.remove('show');
+            
+            // Wait for close animation, then re-render and open
+            setTimeout(() => {
+                let totalEnergy = 0;
+                let totalCost = 0;
+                let avgRate = 0;
+                
+                if (unitName === 'ALL_UNITS') {
+                    let tE = 0, tC = 0, rCount=0, rSum=0;
+                    Object.values(window.RealTreeData || {}).forEach(u => {
+                        if (u.datasets) {
+                            tE += (u.datasets['Total Unts (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                            tC += (u.datasets['Total value (Rs.)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                            const rates = (u.datasets['Landed Rate/Kwh with FPPC (Rs.)'] || []).filter(r=>r>0);
+                            if(rates.length) { 
+                                rSum += rates.reduce((a,b)=>a+parseFloat(b),0) / rates.length; 
+                                rCount++; 
+                            }
+                        }
+                    });
+                    totalEnergy = tE;
+                    totalCost = tC;
+                    avgRate = rCount ? (rSum/rCount) : 0;
+                } else {
+                    const data = window.RealTreeData ? window.RealTreeData[unitName] : null;
+                    if (data && data.datasets) {
+                        totalEnergy = (data.datasets['Total Unts (Kvah)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                        totalCost = (data.datasets['Total value (Rs.)'] || []).reduce((a,b)=>a+(parseFloat(b)||0),0);
+                        const rates = (data.datasets['Landed Rate/Kwh with FPPC (Rs.)'] || []).filter(r=>r>0);
+                        avgRate = rates.length ? rates.reduce((a,b)=>a+parseFloat(b),0) / rates.length : 0;
+                    }
+                }
+
+                const fmtNum = (n) => new Intl.NumberFormat('en-IN', {maximumFractionDigits:0}).format(n||0);
+                const fmtRs = (n) => '₹' + fmtNum(n);
+                const fmtRate = (n) => '₹' + (n||0).toFixed(2) + '/KWh';
+
+                container.innerHTML = `
+                    <div class="tsc-card" style="border-top-color: #3b82f6;">
+                        <div class="tsc-label">Total Energy</div>
+                        <div class="tsc-value">${fmtNum(totalEnergy)} KVAh</div>
+                    </div>
+                    <div class="tsc-card" style="border-top-color: #10b981;">
+                        <div class="tsc-label">Total Cost</div>
+                        <div class="tsc-value">${fmtRs(totalCost)}</div>
+                    </div>
+                    <div class="tsc-card" style="border-top-color: #f59e0b;">
+                        <div class="tsc-label">Avg Landed Rate</div>
+                        <div class="tsc-value">${fmtRate(avgRate)}</div>
+                    </div>
+                `;
+                
+                // Remove inline display if it exists, force re-flow, and add 'show'
+                container.style.display = '';
+                void container.offsetWidth; 
+                container.classList.add('show');
+            }, 250);
+        }
     </script>
 </body>
 </html>
