@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle Login
   loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const usernameInput = document.getElementById('username').value;
+      const usernameInput = document.getElementById('username').value.trim();
       const passwordInput = document.getElementById('password').value;
       const errorDiv = document.getElementById('loginError');
       
@@ -92,31 +92,41 @@ document.addEventListener('DOMContentLoaded', () => {
               } else {
                   localStorage.removeItem('assignedUnits');
               }
+              
               if (data.role === 'admin') {
-                  window.location.href = '/excel-dashboard/index.html';
+                  window.location.href = '/admin_dashboard.html';
               } else if (data.role === 'editor') {
-                  window.location.href = '/excel-dashboard/index.html';
+                  window.location.href = '/excel-dashboard/dashboard.html';
               } else {
-                  window.location.href = '/excel-dashboard/index.html';
+                  window.location.href = '/excel-dashboard/energy-analysis.html';
               }
           } else {
               errorDiv.innerText = data.error || 'Login failed';
           }
       } catch (err) {
-          errorDiv.innerText = 'Server error';
+          errorDiv.innerText = 'Server error. Please ensure the backend is running.';
       }
   });
 
   // Handle Register
   registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const usernameInput = document.getElementById('reg-username').value;
+      const usernameInput = document.getElementById('reg-username').value.trim();
       const passwordInput = document.getElementById('reg-password').value;
       const errorDiv = document.getElementById('registerError');
       const successDiv = document.getElementById('registerSuccess');
       
       errorDiv.innerText = '';
       successDiv.innerText = '';
+      
+      if (usernameInput.length < 3) {
+          errorDiv.innerText = 'Username must be at least 3 characters.';
+          return;
+      }
+      if (passwordInput.length < 6) {
+          errorDiv.innerText = 'Password must be at least 6 characters.';
+          return;
+      }
       
       try {
           const res = await fetch('http://localhost:3000/register', {
@@ -137,20 +147,25 @@ document.addEventListener('DOMContentLoaded', () => {
               errorDiv.innerText = data.error || 'Registration failed';
           }
       } catch (err) {
-          errorDiv.innerText = 'Server error';
+          errorDiv.innerText = 'Server error. Please ensure the backend is running.';
       }
   });
 
   // Handle Reset Password
   forgotPwdForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const usernameInput = document.getElementById('reset-username').value;
+      const usernameInput = document.getElementById('reset-username').value.trim();
       const newPasswordInput = document.getElementById('reset-password').value;
       const errorDiv = document.getElementById('resetError');
       const successDiv = document.getElementById('resetSuccess');
       
       errorDiv.innerText = '';
       successDiv.innerText = '';
+      
+      if (newPasswordInput.length < 6) {
+          errorDiv.innerText = 'New password must be at least 6 characters.';
+          return;
+      }
       
       try {
           const res = await fetch('http://localhost:3000/api/reset-password', {
@@ -171,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
               errorDiv.innerText = data.error || 'Reset failed';
           }
       } catch (err) {
-          errorDiv.innerText = 'Server error';
+          errorDiv.innerText = 'Server error. Please ensure the backend is running.';
       }
   });
 });

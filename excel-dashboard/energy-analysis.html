@@ -349,7 +349,7 @@
             <div class="modern-tree">
                 <ul>
                     <li>
-                        <div class="node-root active" onclick="handleNodeClick(this, 'ALL_UNITS', true, 'tree-main-children')" tabindex="0" role="button" aria-expanded="true">
+                        <div class="node-root" onclick="handleNodeClick(this, 'ALL_UNITS', true, 'tree-main-children')" tabindex="0" role="button" aria-expanded="false">
                             <div class="node-icon"><i class="fa-solid fa-bolt"></i></div>
                             <div class="node-content">
                                 <div class="node-title">UNITS</div>
@@ -357,7 +357,7 @@
                             </div>
                             <div class="node-chevron"><i class="fa-solid fa-chevron-down"></i></div>
                         </div>
-                        <ul class="children show" id="tree-main-children" style="display: flex;">
+                        <ul class="children" id="tree-main-children" style="display: none;">
                             <li><div class="node" data-color="blue" onclick="handleNodeClick(this, 'U-XV', false)" tabindex="0" role="button"><i class="fa-solid fa-building"></i> U-XV</div></li>
                             <li><div class="node" data-color="cyan" onclick="handleNodeClick(this, 'HCL-iV', false)" tabindex="0" role="button"><i class="fa-solid fa-industry"></i> HCL-iV</div></li>
                             <li>
@@ -402,10 +402,50 @@
     </div>
 
     <!-- Data & Logic -->
+    <script src="vendor/xlsx.full.min.js"></script>
     <script src="js/realData.js"></script>
     <script src="js/energyDashboard.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Authorization Check: Must be logged in
+            const role = localStorage.getItem('userRole');
+            if (!role) {
+                window.location.href = '../login.html';
+                return;
+            }
+            
+            // Load full Excel data for APL HC units to replace the incomplete static data
+            try {
+                const response = await fetch('../HT power consumption.xlsx');
+                if (response.ok) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const data = XLSX.utils.sheet_to_json(sheet, { range: 1 });
+                    
+                    const labels = [], hc01 = [], hc03 = [];
+                    data.forEach(row => {
+                        let d = row['MONTH'];
+                        if (d) {
+                            if (!(d instanceof Date)) d = new Date(d);
+                            if (!isNaN(d.getTime())) {
+                                const iso = d.toISOString().split('T')[0];
+                                labels.push(iso.substring(0, 8) + '01');
+                                hc01.push(parseFloat(row['UNITS APL HC-01']) || 0);
+                                hc03.push(parseFloat(row['UNITS APL HC-03']) || 0);
+                            }
+                        }
+                    });
+                    
+                    if (labels.length > 0 && window.RealTreeData) {
+                        window.RealTreeData['UNITS APL HC-01'] = { labels: labels, datasets: { 'Total Unts (Kvah)': hc01 } };
+                        window.RealTreeData['UNITS APL HC-03'] = { labels: labels, datasets: { 'Total Unts (Kvah)': hc03 } };
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading HT power consumption data:', err);
+            }
+
             const selector = document.getElementById('unit-selector');
             
             // Populate dropdown with all units from the tree

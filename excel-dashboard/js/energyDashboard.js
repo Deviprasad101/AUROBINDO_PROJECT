@@ -66,17 +66,53 @@ const EnergyDashboard = (() => {
             rawData = window.RealTreeData && window.RealTreeData[unitName] ? window.RealTreeData[unitName] : null;
         }
 
-        // Even if there is no data for this specific unit, we still render the layout with empty/zero charts.
         const ds = (rawData && rawData.datasets) ? rawData.datasets : {};
         const labels = (rawData && rawData.labels && rawData.labels.length > 0) ? rawData.labels : ['No Data'];
         const mLabels = labels.map(l => l === 'No Data' ? l : formatMonth(l));
         
-        container.innerHTML = buildHTML(labels, mLabels, ds);
-        renderCharts(ds, mLabels);
-        setupFilters(ds, labels, mLabels, unitName);
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const allYears = [];
+        const allMonths = [];
+        labels.forEach(l => {
+            if (l === 'No Data') return;
+            const d = new Date(l);
+            const y = d.getFullYear().toString();
+            const m = monthNames[d.getMonth()];
+            if (!allYears.includes(y)) allYears.push(y);
+            if (!allMonths.includes(m)) allMonths.push(m);
+        });
+        
+        allYears.sort();
+        allMonths.sort((a,b) => monthNames.indexOf(a) - monthNames.indexOf(b));
+
+        let initialIndices = labels.map((_, i) => i);
+        if (labels.length > 3 && labels[0] !== 'No Data') {
+            initialIndices = [labels.length - 3, labels.length - 2, labels.length - 1];
+        }
+        
+        const selectedYears = [];
+        const selectedMonths = [];
+        initialIndices.forEach(i => {
+            if (labels[i] === 'No Data') return;
+            const d = new Date(labels[i]);
+            const y = d.getFullYear().toString();
+            const m = monthNames[d.getMonth()];
+            if (!selectedYears.includes(y)) selectedYears.push(y);
+            if (!selectedMonths.includes(m)) selectedMonths.push(m);
+        });
+        
+        const filteredDs = {};
+        for (const k in ds) {
+            filteredDs[k] = (ds[k] || []).filter((_, i) => initialIndices.includes(i));
+        }
+        const filteredMLabels = initialIndices.map(i => mLabels[i]);
+        
+        container.innerHTML = buildHTML(labels, mLabels, filteredDs, allYears, allMonths, selectedYears, selectedMonths);
+        renderCharts(filteredDs, filteredMLabels);
+        setupFilters(ds, labels, mLabels, monthNames);
     }
 
-    function buildHTML(labels, mLabels, ds) {
+    function buildHTML(labels, mLabels, ds, allYears = [], allMonths = [], selectedYears = [], selectedMonths = []) {
         const tUnits = sumArr(ds['Total Unts (Kvah)']), tVal = sumArr(ds['Total value (Rs.)']);
         const ebU = sumArr(ds['EB Units (Kvah)']), ebV = sumArr(ds['EB Value Total (Rs.)']);
         const oaCons = sumArr(ds['OA Considered IEX (Kvah)']);
@@ -90,13 +126,75 @@ const EnergyDashboard = (() => {
         const solU = sumArr(ds['Solar-Rooftop (Kvah)']), dgU = sumArr(ds['DG Units (Kvah)']);
 
         return `<div class="ed-root">
-            <div class="ed-filter-bar">
-                <span class="ed-filter-label">Month:</span>
-                <div class="ed-filter-pills" id="ed-pills">
-                    <button class="ed-pill active" data-all="true">All</button>
-                    ${labels.map((l, i) => `<button class="ed-pill" data-idx="${i}">${mLabels[i]}</button>`).join('')}
+            <style>
+                .ed-dropdown-container { position: relative; display: inline-block; font-family: 'Inter', sans-serif; margin-left: 8px; }
+                .ed-dropdown-btn { background: #fff; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; color: #334155; display: flex; align-items: center; gap: 8px; min-width: 140px; justify-content: space-between; transition: border-color 0.2s; }
+                .ed-dropdown-btn:hover { border-color: #94a3b8; }
+                .ed-dropdown-menu { position: absolute; top: 100%; left: 0; margin-top: 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 50; width: 220px; max-height: 300px; display: flex; flex-direction: column; overflow: hidden; }
+                .ed-dropdown-actions { padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: flex-start; background: #f8fafc; }
+                .ed-dropdown-list { padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+                .ed-checkbox-label { display: flex; align-items: center; gap: 8px; padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 0.9rem; color: #334155; transition: background 0.2s; margin: 0; }
+                .ed-checkbox-label:hover { background: #f1f5f9; }
+                .ed-cb { accent-color: #4f46e5; width: 16px; height: 16px; cursor: pointer; }
+            </style>
+            <div class="ed-filter-bar" style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center;">
+                    <span class="ed-filter-label" style="font-weight: 600; color: #334155;">YEAR:</span>
+                    <div class="ed-dropdown-container">
+                        <button class="ed-dropdown-btn" id="ed-year-btn">
+                            Select Years <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="ed-dropdown-menu" id="ed-year-menu" style="display: none;">
+                            <div class="ed-dropdown-actions">
+                                <label class="ed-checkbox-label" style="font-weight: 600; padding: 0;">
+                                    <input type="checkbox" id="ed-year-all" class="ed-cb"> Select All
+                                </label>
+                            </div>
+                            <div class="ed-dropdown-list">
+                                ${allYears.map(y => `
+                                    <label class="ed-checkbox-label">
+                                        <input type="checkbox" class="ed-year-cb ed-cb" value="${y}" ${selectedYears.includes(y) ? 'checked' : ''}>
+                                        ${y}
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center;">
+                    <span class="ed-filter-label" style="font-weight: 600; color: #334155;">MONTH:</span>
+                    <div class="ed-dropdown-container">
+                        <button class="ed-dropdown-btn" id="ed-month-btn">
+                            Select Months <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="ed-dropdown-menu" id="ed-month-menu" style="display: none;">
+                            <div class="ed-dropdown-actions">
+                                <label class="ed-checkbox-label" style="font-weight: 600; padding: 0;">
+                                    <input type="checkbox" id="ed-month-all" class="ed-cb"> Select All
+                                </label>
+                            </div>
+                            <div class="ed-dropdown-list">
+                                ${allMonths.map(m => `
+                                    <label class="ed-checkbox-label">
+                                        <input type="checkbox" class="ed-month-cb ed-cb" value="${m}" ${selectedMonths.includes(m) ? 'checked' : ''}>
+                                        ${m}
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
+            <div id="ed-active-filters" style="margin-top: 12px; margin-bottom: 20px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; padding: 12px 16px; background: #f8fafc; border-left: 4px solid #4f46e5; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-weight: 600; margin-bottom: 4px; color: #1e293b;">Selected Filters:</div>
+                <div id="ed-active-filters-text">
+                    Year: ${selectedYears.length === allYears.length || selectedYears.length === 0 ? 'All' : selectedYears.join(', ')}<br>
+                    Months: ${selectedMonths.length === allMonths.length || selectedMonths.length === 0 ? 'All' : selectedMonths.join(', ')}
+                </div>
+            </div>
+
             <div class="ed-kpi-row-7" id="ed-top-kpis">
                 ${kpi('Total Energy', fmtNum(tUnits) + ' KVAh', '--kpi-blue')}
                 ${kpi('Total Energy Cost', fmtRs(tVal), '--kpi-green')}
@@ -302,28 +400,79 @@ const EnergyDashboard = (() => {
         }
     }
 
-    function setupFilters(dsOrig, labelsOrig, mLabelsOrig, unitName) {
-        const pills = document.getElementById('ed-pills');
-        if (!pills) return;
-        let sIdx = labelsOrig.map((_, i) => i);
+    function setupFilters(dsOrig, labelsOrig, mLabelsOrig, monthNames) {
+        const yearBtn = document.getElementById('ed-year-btn');
+        const yearMenu = document.getElementById('ed-year-menu');
+        const monthBtn = document.getElementById('ed-month-btn');
+        const monthMenu = document.getElementById('ed-month-menu');
+        
+        const yearCbs = document.querySelectorAll('.ed-year-cb');
+        const monthCbs = document.querySelectorAll('.ed-month-cb');
+        const yearAll = document.getElementById('ed-year-all');
+        const monthAll = document.getElementById('ed-month-all');
+        
+        if (!yearBtn || !monthBtn) return;
+        
+        yearBtn.addEventListener('click', (e) => {
+            yearMenu.style.display = yearMenu.style.display === 'none' ? 'flex' : 'none';
+            monthMenu.style.display = 'none';
+            e.stopPropagation();
+        });
+        
+        monthBtn.addEventListener('click', (e) => {
+            monthMenu.style.display = monthMenu.style.display === 'none' ? 'flex' : 'none';
+            yearMenu.style.display = 'none';
+            e.stopPropagation();
+        });
+        
+        yearMenu.addEventListener('click', (e) => e.stopPropagation());
+        monthMenu.addEventListener('click', (e) => e.stopPropagation());
+        
+        document.addEventListener('click', (e) => {
+            if (!yearMenu.contains(e.target) && !yearBtn.contains(e.target)) yearMenu.style.display = 'none';
+            if (!monthMenu.contains(e.target) && !monthBtn.contains(e.target)) monthMenu.style.display = 'none';
+        });
+        
+        if (yearAll) {
+            yearAll.checked = Array.from(yearCbs).length > 0 && Array.from(yearCbs).every(cb => cb.checked);
+            yearAll.addEventListener('change', (e) => {
+                yearCbs.forEach(cb => cb.checked = e.target.checked);
+                applyFilters();
+            });
+        }
+        
+        if (monthAll) {
+            monthAll.checked = Array.from(monthCbs).length > 0 && Array.from(monthCbs).every(cb => cb.checked);
+            monthAll.addEventListener('change', (e) => {
+                monthCbs.forEach(cb => cb.checked = e.target.checked);
+                applyFilters();
+            });
+        }
 
-        pills.addEventListener('click', (e) => {
-            const btn = e.target.closest('.ed-pill');
-            if (!btn) return;
-            if (btn.dataset.all) {
-                sIdx = labelsOrig.map((_, i) => i);
-                pills.querySelectorAll('.ed-pill').forEach(p => p.classList.remove('active'));
-                btn.classList.add('active');
-            } else {
-                const i = parseInt(btn.dataset.idx);
-                pills.querySelector('[data-all]').classList.remove('active');
-                if (sIdx.length === labelsOrig.length) { sIdx = [i]; pills.querySelectorAll('.ed-pill').forEach(p => p.classList.remove('active')); btn.classList.add('active'); }
-                else {
-                    if (btn.classList.contains('active')) { if (sIdx.length > 1) { sIdx = sIdx.filter(x => x !== i); btn.classList.remove('active'); } }
-                    else { sIdx.push(i); btn.classList.add('active'); }
+        const cbChangeHandler = () => {
+            if (yearAll) yearAll.checked = Array.from(yearCbs).every(cb => cb.checked);
+            if (monthAll) monthAll.checked = Array.from(monthCbs).every(cb => cb.checked);
+            applyFilters();
+        };
+
+        yearCbs.forEach(cb => cb.addEventListener('change', cbChangeHandler));
+        monthCbs.forEach(cb => cb.addEventListener('change', cbChangeHandler));
+        
+        function applyFilters() {
+            const selYears = Array.from(yearCbs).filter(cb => cb.checked).map(cb => cb.value);
+            const selMonths = Array.from(monthCbs).filter(cb => cb.checked).map(cb => cb.value);
+            
+            const sIdx = [];
+            labelsOrig.forEach((l, i) => {
+                if (l === 'No Data') return;
+                const d = new Date(l);
+                const y = d.getFullYear().toString();
+                const m = monthNames[d.getMonth()];
+                if (selYears.includes(y) && selMonths.includes(m)) {
+                    sIdx.push(i);
                 }
-                if (sIdx.length === labelsOrig.length) { sIdx = labelsOrig.map((_, i) => i); pills.querySelectorAll('.ed-pill').forEach(p => p.classList.remove('active')); pills.querySelector('[data-all]').classList.add('active'); }
-            }
+            });
+            
             const ds = {};
             for (const k in dsOrig) ds[k] = (dsOrig[k]||[]).filter((_, i) => sIdx.includes(i));
             const ml = sIdx.map(i => mLabelsOrig[i]);
@@ -336,6 +485,13 @@ const EnergyDashboard = (() => {
             
             const oaIss = sumArr(ds['OA Issued IEX (Kvah)']), iexV = sumArr(ds['IEX-Value (Rs.)']);
             const sol = sumArr(ds['Solar-Rooftop (Kvah)']), dg = sumArr(ds['DG Units (Kvah)']);
+
+            const activeFiltersText = document.getElementById('ed-active-filters-text');
+            if (activeFiltersText) {
+                const yearStr = (selYears.length === yearCbs.length || selYears.length === 0) ? 'All' : selYears.join(', ');
+                const monthStr = (selMonths.length === monthCbs.length || selMonths.length === 0) ? 'All' : selMonths.join(', ');
+                activeFiltersText.innerHTML = `Year: ${yearStr}<br>Months: ${monthStr}`;
+            }
 
             const top = document.getElementById('ed-top-kpis');
             if (top) top.innerHTML = 
@@ -355,7 +511,7 @@ const EnergyDashboard = (() => {
 
             destroyAllCharts();
             renderCharts(ds, ml);
-        });
+        }
     }
 
     return { render, destroyAllCharts };

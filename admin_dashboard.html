@@ -415,6 +415,13 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const role = localStorage.getItem('userRole');
+            if (role !== 'admin') {
+                window.location.href = 'login.html';
+            }
+        });
+
         async function fetchUsers() {
             try {
                 const res = await fetch('http://localhost:3000/api/users');

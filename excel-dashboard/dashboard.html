@@ -434,6 +434,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             const role = localStorage.getItem('userRole');
             
+            // Authorization Check: Only Admin and Editor can access this page
+            if (role !== 'admin' && role !== 'editor') {
+                window.location.href = '../login.html';
+                return;
+            }
+            
             // Set Badge
             const badge = document.getElementById('user-role-badge');
             if (badge && role) {
