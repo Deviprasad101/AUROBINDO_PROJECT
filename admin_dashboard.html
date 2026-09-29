@@ -444,7 +444,7 @@
                         iconClass = 'fa-pen-to-square';
                     }
                     let deleteBtnHTML = '';
-                    if (user.username !== 'password') { // Don't allow deleting the default admin
+                    if (user.id !== 1) { // Prevent deleting the primary admin
                         deleteBtnHTML = `<button onclick="deleteUser(${user.id}, '${user.username}')" style="background: none; border: none; color: #e74c3c; cursor: pointer; padding: 5px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="Delete User"><i class="fas fa-trash"></i></button>`;
                     }
                     
@@ -487,7 +487,7 @@
 
         document.getElementById('createEditorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const usernameInput = document.getElementById('editorUsername').value;
+            const usernameInput = document.getElementById('editorUsername').value.trim();
             const passwordInput = document.getElementById('editorPassword').value;
             
             // Collect selected units
@@ -499,6 +499,17 @@
             
             msgDiv.style.display = 'none';
             errorDiv.style.display = 'none';
+
+            if (usernameInput.length < 3) {
+                errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Username must be at least 3 characters.`;
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (passwordInput.length < 6) {
+                errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Password must be at least 6 characters.`;
+                errorDiv.style.display = 'block';
+                return;
+            }
 
             try {
                 const res = await fetch('http://localhost:3000/api/create-editor', {
@@ -531,11 +542,13 @@
         });
 
         function logout() {
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('assignedUnits');
             // Add a subtle exit animation before redirecting
             document.body.style.opacity = '0';
             document.body.style.transition = 'opacity 0.4s ease';
             setTimeout(() => {
-                window.location.href = '/login.html';
+                window.location.replace('login.html');
             }, 400);
         }
 

@@ -335,10 +335,14 @@
             <h1>Aurobindo Pharma - Energy Analysis</h1>
         </div>
         <div style="display: flex; gap: 12px;">
-            <a href="dashboard.html" class="home-btn">
+            <a href="dashboard.html" class="home-btn" id="backToDashboardBtn">
                 <i class="fa-solid fa-arrow-left"></i>
                 Back to Dashboard
             </a>
+            <button onclick="logoutUser()" class="home-btn" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; cursor: pointer;">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Logout
+            </button>
         </div>
     </header>
 
@@ -406,12 +410,24 @@
     <script src="js/realData.js"></script>
     <script src="js/energyDashboard.js"></script>
     <script>
+        function logoutUser() {
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('assignedUnits');
+            window.location.replace('../login.html');
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             // Authorization Check: Must be logged in
             const role = localStorage.getItem('userRole');
             if (!role) {
                 window.location.href = '../login.html';
                 return;
+            }
+            
+            // Role-based visibility
+            if (role === 'user') {
+                const backBtn = document.getElementById('backToDashboardBtn');
+                if (backBtn) backBtn.style.display = 'none';
             }
             
             // Load full Excel data for APL HC units to replace the incomplete static data

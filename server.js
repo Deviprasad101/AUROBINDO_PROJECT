@@ -39,8 +39,8 @@ const db = new sqlite3.Database('database.sqlite', (err) => {
             role TEXT
         )`, (err) => {
             if (!err) {
-                // Create default admin user if not exists
-                db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('password', 'password', 'admin')`);
+                // Create default admin user if not exists (username: admin)
+                db.run(`INSERT OR IGNORE INTO users (id, username, password, role) VALUES (1, 'admin', 'admin', 'admin')`);
                 
                 // Add assigned_units column if it doesn't exist (ignore error if it does)
                 db.run(`ALTER TABLE users ADD COLUMN assigned_units TEXT`, (err) => {
@@ -51,17 +51,37 @@ const db = new sqlite3.Database('database.sqlite', (err) => {
     }
 });
 
+// Helper function to get the lowest available sequential ID
+function getNextSequentialId(db, callback) {
+    db.all('SELECT id FROM users ORDER BY id ASC', [], (err, rows) => {
+        if (err) return callback(err);
+        let nextId = 1;
+        for (let row of rows) {
+            if (row.id === nextId) {
+                nextId++;
+            } else if (row.id > nextId) {
+                break;
+            }
+        }
+        callback(null, nextId);
+    });
+}
+
 // Register Endpoint
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
-    db.run(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`, [username, password, 'user'], function(err) {
-        if (err) {
-            if (err.message.includes('UNIQUE')) {
-                return res.status(400).json({ error: 'Username already exists' });
+    getNextSequentialId(db, (err, nextId) => {
+        if (err) return res.status(500).json({ error: 'Database error while generating ID' });
+        
+        db.run(`INSERT INTO users (id, username, password, role) VALUES (?, ?, ?, ?)`, [nextId, username, password, 'user'], function(err) {
+            if (err) {
+                if (err.message.includes('UNIQUE')) {
+                    return res.status(400).json({ error: 'Username already exists' });
+                }
+                return res.status(500).json({ error: 'Failed to register' });
             }
-            return res.status(500).json({ error: 'Failed to register' });
-        }
-        res.json({ message: 'Registration successful', id: this.lastID });
+            res.json({ message: 'Registration successful', id: nextId });
+        });
     });
 });
 
@@ -96,14 +116,18 @@ app.post('/api/reset-password', (req, res) => {
 // Create Editor Endpoint (for Admin)
 app.post('/api/create-editor', (req, res) => {
     const { username, password, assigned_units } = req.body;
-    db.run(`INSERT INTO users (username, password, role, assigned_units) VALUES (?, ?, ?, ?)`, [username, password, 'editor', assigned_units], function(err) {
-        if (err) {
-            if (err.message.includes('UNIQUE')) {
-                return res.status(400).json({ error: 'Username already exists' });
+    getNextSequentialId(db, (err, nextId) => {
+        if (err) return res.status(500).json({ error: 'Database error while generating ID' });
+        
+        db.run(`INSERT INTO users (id, username, password, role, assigned_units) VALUES (?, ?, ?, ?, ?)`, [nextId, username, password, 'editor', assigned_units], function(err) {
+            if (err) {
+                if (err.message.includes('UNIQUE')) {
+                    return res.status(400).json({ error: 'Username already exists' });
+                }
+                return res.status(500).json({ error: 'Failed to create editor' });
             }
-            return res.status(500).json({ error: 'Failed to create editor' });
-        }
-        res.json({ message: 'Editor created successfully', id: this.lastID });
+            res.json({ message: 'Editor created successfully', id: nextId });
+        });
     });
 });
 
@@ -134,13 +158,13 @@ app.get('/api/users', (req, res) => {
 // Delete User Endpoint
 app.delete('/api/users/:id', (req, res) => {
     const userId = req.params.id;
-    // Don't allow deleting the default admin account (ID 1 usually, or by username)
-    db.run(`DELETE FROM users WHERE id = ? AND username != 'password'`, [userId], function(err) {
+    // Prevent deleting the main admin user (id = 1)
+    db.run(`DELETE FROM users WHERE id = ? AND id != 1`, [userId], function(err) {
         if (err) {
             return res.status(500).json({ error: 'Database error' });
         }
         if (this.changes === 0) {
-            return res.status(404).json({ error: 'User not found or cannot delete default admin' });
+            return res.status(404).json({ error: 'User not found or cannot delete the primary admin' });
         }
         res.json({ message: 'User deleted successfully' });
     });

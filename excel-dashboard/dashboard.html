@@ -457,7 +457,8 @@
 
         function logoutUser() {
             localStorage.removeItem('userRole');
-            window.location.href = '../login.html';
+            localStorage.removeItem('assignedUnits');
+            window.location.replace('../login.html');
         }
     </script>
     <script src="js/app.js?v=18"></script>
