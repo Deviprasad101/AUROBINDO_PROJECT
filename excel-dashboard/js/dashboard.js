@@ -1002,7 +1002,7 @@ const Dashboard = {
             btn.disabled = true;
 
             try {
-                const response = await fetch('http://localhost:3000/api/verify-editor', {
+                const response = await fetch('/api/verify-editor', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
